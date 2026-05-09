@@ -5,10 +5,13 @@ export interface ProcessInfo {
   pid: number;
   name: string;
   cpu_percent: number;
+  suspicious: boolean;
+  suspicious_reason?: string;
 }
 
 export interface ProcessesResponse {
   processes: ProcessInfo[];
+  auto_killed?: string[];
 }
 
 export async function getProcesses(): Promise<ProcessesResponse> {
