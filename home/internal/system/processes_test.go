@@ -73,6 +73,27 @@ func TestCheckSuspiciousKnownBadName(t *testing.T) {
 	}
 }
 
+func TestCheckSuspiciousSystemProcessImpostor(t *testing.T) {
+	sus, reason := checkSuspicious(nil, nil, "apt-cdrommouset", 65.8)
+	if !sus || reason != "Known malware name" {
+		t.Fatalf("expected apt-cdrommouset to be flagged as Known malware name, got sus=%v reason=%q", sus, reason)
+	}
+}
+
+func TestCheckSuspiciousSystemProcessImpostorPattern(t *testing.T) {
+	sus, reason := checkSuspicious(nil, nil, "apt-getabc123", 65.8)
+	if !sus || reason != "System process impersonation" {
+		t.Fatalf("expected apt-getabc123 to be flagged as System process impersonation, got sus=%v reason=%q", sus, reason)
+	}
+}
+
+func TestCheckSuspiciousAllowsSeparatedSystemProcessNames(t *testing.T) {
+	sus, reason := checkSuspicious(nil, nil, "systemd-journald", 65.8)
+	if sus {
+		t.Fatalf("expected systemd-journald not to be flagged, got reason=%q", reason)
+	}
+}
+
 func TestCheckSuspiciousEmptyName(t *testing.T) {
 	sus, reason := checkSuspicious(nil, nil, "", 5)
 	if !sus || reason != "Invalid process name" {

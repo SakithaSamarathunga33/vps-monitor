@@ -19,11 +19,18 @@ var cpuHistory sync.Map // map[int32]float64
 var knownBadNames = map[string]struct{}{
 	"xmrig": {}, "minerd": {}, "kinsing": {}, "masscan": {},
 	"nmap": {}, "cryptonight": {}, "kdevtmpfsi": {}, "kworkerds": {},
-	"sysupdate": {}, "networkservice": {}, "ld-musl": {},
+	"sysupdate": {}, "networkservice": {}, "ld-musl": {}, "stratum+tcp": {},
+	"apt-cdrommouset": {},
 }
 
 var suspiciousExePrefixes = []string{
 	"/tmp/", "/dev/shm/", "/var/tmp/", "/run/shm/",
+}
+
+var systemProcessNamePrefixes = []string{
+	"apt-cdrom", "apt-get", "apt-cache", "dpkg",
+	"systemd", "sshd", "cron", "crond", "dockerd", "containerd",
+	"kworker", "ksoftirqd",
 }
 
 // checkSuspicious runs all four heuristics and returns (suspicious, reason).
@@ -41,12 +48,17 @@ func checkSuspicious(ctx context.Context, p *process.Process, name string, cpu f
 		return true, "Known malware name"
 	}
 
-	// 3. Empty or non-printable name.
+	// 3. Fake names that append random-looking text to common system commands.
+	if cpu > 20 && isSystemProcessNameImpostor(name) {
+		return true, "System process impersonation"
+	}
+
+	// 4. Empty or non-printable name.
 	if name == "" || !isPrintableASCII(name) {
 		return true, "Invalid process name"
 	}
 
-	// 4. Executable in a suspicious directory.
+	// 5. Executable in a suspicious directory.
 	if p != nil {
 		exe, err := p.ExeWithContext(ctx)
 		if err == nil {
@@ -64,6 +76,40 @@ func checkSuspicious(ctx context.Context, p *process.Process, name string, cpu f
 func isPrintableASCII(s string) bool {
 	for _, r := range s {
 		if r > unicode.MaxASCII || !unicode.IsPrint(r) {
+			return false
+		}
+	}
+	return true
+}
+
+func isSystemProcessNameImpostor(name string) bool {
+	lowerName := strings.ToLower(name)
+	for _, prefix := range systemProcessNamePrefixes {
+		if lowerName == prefix || !strings.HasPrefix(lowerName, prefix) {
+			continue
+		}
+
+		suffix := strings.TrimPrefix(lowerName, prefix)
+		if len(suffix) < 3 {
+			continue
+		}
+
+		// Legitimate systemd helpers are usually separated, e.g. systemd-journald.
+		first := rune(suffix[0])
+		if first == '-' || first == '_' || first == '.' || first == '/' {
+			continue
+		}
+
+		if isASCIIAlnum(suffix) {
+			return true
+		}
+	}
+	return false
+}
+
+func isASCIIAlnum(s string) bool {
+	for _, r := range s {
+		if r > unicode.MaxASCII || !(unicode.IsLetter(r) || unicode.IsDigit(r)) {
 			return false
 		}
 	}

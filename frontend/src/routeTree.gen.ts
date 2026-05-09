@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as StatsIndexRouteImport } from './routes/stats/index'
 import { Route as ScanHistoryIndexRouteImport } from './routes/scan-history/index'
 import { Route as SbomHistoryIndexRouteImport } from './routes/sbom-history/index'
+import { Route as ProcessesIndexRouteImport } from './routes/processes/index'
 import { Route as NetworksIndexRouteImport } from './routes/networks/index'
 import { Route as ImagesIndexRouteImport } from './routes/images/index'
 import { Route as AlertsIndexRouteImport } from './routes/alerts/index'
@@ -51,6 +52,11 @@ const SbomHistoryIndexRoute = SbomHistoryIndexRouteImport.update({
   path: '/sbom-history/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProcessesIndexRoute = ProcessesIndexRouteImport.update({
+  id: '/processes/',
+  path: '/processes/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NetworksIndexRoute = NetworksIndexRouteImport.update({
   id: '/networks/',
   path: '/networks/',
@@ -83,12 +89,13 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/settings': typeof SettingsRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
-  '/alerts': typeof AlertsIndexRoute
-  '/images': typeof ImagesIndexRoute
-  '/networks': typeof NetworksIndexRoute
-  '/sbom-history': typeof SbomHistoryIndexRoute
-  '/scan-history': typeof ScanHistoryIndexRoute
-  '/stats': typeof StatsIndexRoute
+  '/alerts/': typeof AlertsIndexRoute
+  '/images/': typeof ImagesIndexRoute
+  '/networks/': typeof NetworksIndexRoute
+  '/processes/': typeof ProcessesIndexRoute
+  '/sbom-history/': typeof SbomHistoryIndexRoute
+  '/scan-history/': typeof ScanHistoryIndexRoute
+  '/stats/': typeof StatsIndexRoute
   '/containers/$containerId/logs': typeof ContainersContainerIdLogsRoute
 }
 export interface FileRoutesByTo {
@@ -99,6 +106,7 @@ export interface FileRoutesByTo {
   '/alerts': typeof AlertsIndexRoute
   '/images': typeof ImagesIndexRoute
   '/networks': typeof NetworksIndexRoute
+  '/processes': typeof ProcessesIndexRoute
   '/sbom-history': typeof SbomHistoryIndexRoute
   '/scan-history': typeof ScanHistoryIndexRoute
   '/stats': typeof StatsIndexRoute
@@ -113,6 +121,7 @@ export interface FileRoutesById {
   '/alerts/': typeof AlertsIndexRoute
   '/images/': typeof ImagesIndexRoute
   '/networks/': typeof NetworksIndexRoute
+  '/processes/': typeof ProcessesIndexRoute
   '/sbom-history/': typeof SbomHistoryIndexRoute
   '/scan-history/': typeof ScanHistoryIndexRoute
   '/stats/': typeof StatsIndexRoute
@@ -125,12 +134,13 @@ export interface FileRouteTypes {
     | '/login'
     | '/settings'
     | '/demo/tanstack-query'
-    | '/alerts'
-    | '/images'
-    | '/networks'
-    | '/sbom-history'
-    | '/scan-history'
-    | '/stats'
+    | '/alerts/'
+    | '/images/'
+    | '/networks/'
+    | '/processes/'
+    | '/sbom-history/'
+    | '/scan-history/'
+    | '/stats/'
     | '/containers/$containerId/logs'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -141,6 +151,7 @@ export interface FileRouteTypes {
     | '/alerts'
     | '/images'
     | '/networks'
+    | '/processes'
     | '/sbom-history'
     | '/scan-history'
     | '/stats'
@@ -154,6 +165,7 @@ export interface FileRouteTypes {
     | '/alerts/'
     | '/images/'
     | '/networks/'
+    | '/processes/'
     | '/sbom-history/'
     | '/scan-history/'
     | '/stats/'
@@ -168,6 +180,7 @@ export interface RootRouteChildren {
   AlertsIndexRoute: typeof AlertsIndexRoute
   ImagesIndexRoute: typeof ImagesIndexRoute
   NetworksIndexRoute: typeof NetworksIndexRoute
+  ProcessesIndexRoute: typeof ProcessesIndexRoute
   SbomHistoryIndexRoute: typeof SbomHistoryIndexRoute
   ScanHistoryIndexRoute: typeof ScanHistoryIndexRoute
   StatsIndexRoute: typeof StatsIndexRoute
@@ -200,42 +213,49 @@ declare module '@tanstack/react-router' {
     '/stats/': {
       id: '/stats/'
       path: '/stats'
-      fullPath: '/stats'
+      fullPath: '/stats/'
       preLoaderRoute: typeof StatsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/scan-history/': {
       id: '/scan-history/'
       path: '/scan-history'
-      fullPath: '/scan-history'
+      fullPath: '/scan-history/'
       preLoaderRoute: typeof ScanHistoryIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sbom-history/': {
       id: '/sbom-history/'
       path: '/sbom-history'
-      fullPath: '/sbom-history'
+      fullPath: '/sbom-history/'
       preLoaderRoute: typeof SbomHistoryIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/processes/': {
+      id: '/processes/'
+      path: '/processes'
+      fullPath: '/processes/'
+      preLoaderRoute: typeof ProcessesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/networks/': {
       id: '/networks/'
       path: '/networks'
-      fullPath: '/networks'
+      fullPath: '/networks/'
       preLoaderRoute: typeof NetworksIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/images/': {
       id: '/images/'
       path: '/images'
-      fullPath: '/images'
+      fullPath: '/images/'
       preLoaderRoute: typeof ImagesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/alerts/': {
       id: '/alerts/'
       path: '/alerts'
-      fullPath: '/alerts'
+      fullPath: '/alerts/'
       preLoaderRoute: typeof AlertsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
@@ -264,6 +284,7 @@ const rootRouteChildren: RootRouteChildren = {
   AlertsIndexRoute: AlertsIndexRoute,
   ImagesIndexRoute: ImagesIndexRoute,
   NetworksIndexRoute: NetworksIndexRoute,
+  ProcessesIndexRoute: ProcessesIndexRoute,
   SbomHistoryIndexRoute: SbomHistoryIndexRoute,
   ScanHistoryIndexRoute: ScanHistoryIndexRoute,
   StatsIndexRoute: StatsIndexRoute,

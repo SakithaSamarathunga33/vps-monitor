@@ -56,6 +56,8 @@ function ReasonBadge({ reason }: { reason: string }) {
       "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400",
     "Invalid process name":
       "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400",
+    "System process impersonation":
+      "bg-red-500/10 text-red-600 border-red-500/20 dark:text-red-400",
   };
   const cls =
     colors[reason] ?? "bg-muted text-muted-foreground border-border";
@@ -214,20 +216,24 @@ export function ProcessesPage() {
       </div>
 
       {/* Suspicious Processes Section */}
-      {suspiciousProcesses.length > 0 && (
-        <Card className="border-red-500/40 bg-red-500/5 dark:bg-red-500/10">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <ShieldAlertIcon className="size-5 text-red-500" />
-              <CardTitle className="text-sm font-semibold text-red-600 dark:text-red-400">
-                Suspicious Processes Detected
-              </CardTitle>
-              <span className="rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">
-                {suspiciousProcesses.length}
-              </span>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
+      <Card className="border-red-500/40 bg-red-500/5 dark:bg-red-500/10">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <ShieldAlertIcon className="size-5 text-red-500" />
+            <CardTitle className="text-sm font-semibold text-red-600 dark:text-red-400">
+              Suspicious Processes
+            </CardTitle>
+            <span className="rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">
+              {suspiciousProcesses.length}
+            </span>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          {suspiciousProcesses.length === 0 ? (
+            <p className="px-6 pb-6 text-sm text-muted-foreground">
+              No suspicious processes detected.
+            </p>
+          ) : (
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
@@ -257,9 +263,9 @@ export function ProcessesPage() {
                 ))}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
-      )}
+          )}
+        </CardContent>
+      </Card>
 
       {/* Top 20 Table */}
       <Card>
