@@ -1,0 +1,18 @@
+services:
+  vps-monitor:
+    image: hhftechnology/vps-monitor:latest
+    container_name: vps-monitor
+    restart: unless-stopped
+    ports:
+      - "6789:6789"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /proc:/host/proc:ro
+      - vps-monitor-data:/data
+    environment:
+      - READONLY_MODE=false
+      - DOCKER_HOSTS=local=unix:///var/run/docker.sock
+      - HOSTNAME_OVERRIDE=${HOSTNAME_OVERRIDE:-My VPS}
+
+volumes:
+  vps-monitor-data:
