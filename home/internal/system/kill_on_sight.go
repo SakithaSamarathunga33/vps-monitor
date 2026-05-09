@@ -20,7 +20,21 @@ type KillOnSightStore struct {
 
 var protectedExactKillOnSightNames = map[string]struct{}{
 	"apache2": {}, "caddy": {}, "haproxy": {}, "httpd": {}, "nginx": {},
-	"mysql": {}, "mysqld": {}, "postgres": {}, "redis-server": {},
+	"buildctl": {}, "buildkitd": {}, "containerd": {}, "containerd-shim": {},
+	"docker": {}, "docker-init": {}, "docker-proxy": {}, "dockerd": {},
+	"github-actions-runner": {}, "runner.listener": {}, "runner.worker": {},
+	"run.sh": {}, "runsvc.sh": {},
+	"mysql": {}, "mysqld": {}, "nccontd": {}, "postgres": {}, "redis-server": {},
+	"pm2": {}, "runc": {},
+}
+
+var protectedKillOnSightPrefixes = []string{
+	"actions.runner",
+	"containerd-shim",
+	"github-actions-runner",
+	"pm2",
+	"runner.listener",
+	"runner.worker",
 }
 
 // NewKillOnSightStore loads (or creates) the kill-on-sight list from dataDir.
@@ -38,6 +52,10 @@ func NewKillOnSightStore(dataDir string) (*KillOnSightStore, error) {
 // Contains reports whether name is in the kill-on-sight list. Entries ending
 // in * are treated as prefix rules, e.g. "byobu-screen*".
 func (s *KillOnSightStore) Contains(name string) bool {
+	if IsProtectedKillOnSightName(name) {
+		return false
+	}
+
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	for rule := range s.names {
@@ -115,6 +133,19 @@ func IsProtectedExactKillOnSightName(name string) bool {
 	}
 	_, protected := protectedExactKillOnSightNames[normalized]
 	return protected
+}
+
+func IsProtectedKillOnSightName(name string) bool {
+	normalized := strings.ToLower(strings.TrimSpace(name))
+	if IsProtectedExactKillOnSightName(normalized) {
+		return true
+	}
+	for _, prefix := range protectedKillOnSightPrefixes {
+		if strings.HasPrefix(normalized, prefix) {
+			return true
+		}
+	}
+	return false
 }
 
 func killOnSightRuleMatches(rule, name string) bool {

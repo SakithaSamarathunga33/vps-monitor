@@ -110,3 +110,35 @@ func TestKillOnSightStoreRejectsProtectedExactServiceName(t *testing.T) {
 		t.Fatal("expected protected nginx name not to match kill-on-sight")
 	}
 }
+
+func TestKillOnSightStoreAllowsProtectedServicesThroughWildcardRules(t *testing.T) {
+	dir := t.TempDir()
+	store, err := NewKillOnSightStore(dir)
+	if err != nil {
+		t.Fatalf("NewKillOnSightStore() error = %v", err)
+	}
+
+	for _, rule := range []string{"actions*", "docker*", "nginx*", "pm2*", "runner*"} {
+		if err := store.Add(rule); err != nil {
+			t.Fatalf("Add(%q) error = %v", rule, err)
+		}
+	}
+
+	for _, name := range []string{
+		"actions.runner.example.repo.runner",
+		"docker",
+		"dockerd",
+		"docker-proxy",
+		"containerd-shim-runc-v2",
+		"github-actions-runner",
+		"nginx",
+		"PM2",
+		"Runner.Listener",
+		"Runner.Worker",
+		"runsvc.sh",
+	} {
+		if store.Contains(name) {
+			t.Fatalf("expected protected service %q not to match kill-on-sight wildcard rules", name)
+		}
+	}
+}

@@ -80,10 +80,17 @@ func TestCheckSuspiciousHighCPU(t *testing.T) {
 	}
 }
 
-func TestCheckSuspiciousFlagsDockerBuilderPruneRelatedHighCPU(t *testing.T) {
+func TestCheckSuspiciousAllowsProtectedDockerHighCPU(t *testing.T) {
 	sus, reason := checkSuspicious(nil, nil, "nccontd", 62)
-	if !sus || reason != "High CPU" {
-		t.Fatalf("expected nccontd above 50%% CPU to be flagged as High CPU, got sus=%v reason=%q", sus, reason)
+	if sus {
+		t.Fatalf("expected protected Docker process above 50%% CPU not to be flagged, got reason=%q", reason)
+	}
+}
+
+func TestCheckSuspiciousAllowsProtectedPM2HighCPU(t *testing.T) {
+	sus, reason := checkSuspicious(nil, nil, "PM2", 62)
+	if sus {
+		t.Fatalf("expected protected PM2 process above 50%% CPU not to be flagged, got reason=%q", reason)
 	}
 }
 

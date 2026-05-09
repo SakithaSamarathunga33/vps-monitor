@@ -59,6 +59,10 @@ const suspiciousCPUThreshold = 50.0
 // checkSuspicious runs all heuristics and returns (suspicious, reason).
 // p may be nil when called from tests that only exercise name/CPU checks.
 func checkSuspicious(ctx context.Context, p *process.Process, name string, cpu float64) (bool, string) {
+	if IsProtectedKillOnSightName(name) {
+		return false, ""
+	}
+
 	// 1. High CPU: flag immediately so the UI can offer manual kill/ban controls.
 	if cpu > suspiciousCPUThreshold {
 		return true, "High CPU"
@@ -150,7 +154,7 @@ func isSystemProcessNameImpostor(name string) bool {
 
 func suggestedKillOnSightName(name string) string {
 	lowerName := strings.ToLower(name)
-	if IsProtectedExactKillOnSightName(lowerName) {
+	if IsProtectedKillOnSightName(lowerName) {
 		return ""
 	}
 	for _, prefix := range systemProcessNamePrefixes {
