@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { cn } from "@/lib/utils";
 import {
   AlertTriangleIcon,
   BellIcon,
@@ -40,11 +41,11 @@ function getAlertIcon(type: AlertType) {
   }
 }
 
-function getAlertColor(type: AlertType, acknowledged: boolean) {
+function getAlertColor(type: AlertType, acknowledged: boolean): string {
   if (acknowledged) return "text-muted-foreground";
   switch (type) {
     case "container_stopped":
-      return "text-yellow-500";
+      return "text-amber-500";
     case "cpu_threshold":
     case "memory_threshold":
       return "text-red-500";
@@ -230,11 +231,10 @@ export function AlertsList() {
                 return (
                   <div
                     key={alert.id}
-                    className={`flex items-start gap-4 p-4 rounded-lg border ${
-                      alert.acknowledged
-                        ? "bg-muted/30 opacity-60"
-                        : "bg-card"
-                    }`}
+                    className={cn(
+                      "flex items-start gap-4 p-4 rounded-lg border transition-opacity",
+                      alert.acknowledged ? "opacity-50" : "bg-card"
+                    )}
                   >
                     <div className={`mt-0.5 ${color}`}>
                       <Icon className="size-5" />
