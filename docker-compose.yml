@@ -6,6 +6,8 @@ services:
     container_name: vps-monitor
     restart: unless-stopped
     pid: "host"
+    cap_add:
+      - KILL
     ports:
       - "6789:6789"
     volumes:

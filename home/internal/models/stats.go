@@ -33,10 +33,20 @@ type ProcessInfo struct {
 	Suspicious       bool    `json:"suspicious"`
 	SuspiciousReason string  `json:"suspicious_reason,omitempty"`
 	ProcessType      string  `json:"process_type"`
+	KillError        string  `json:"kill_error,omitempty"`
+}
+
+// ProcessKillFailure describes a kill-on-sight attempt that could not terminate
+// a matching process.
+type ProcessKillFailure struct {
+	PID   int32  `json:"pid"`
+	Name  string `json:"name"`
+	Error string `json:"error"`
 }
 
 // ProcessesResponse is the JSON envelope returned by GET /api/v1/system/processes.
 type ProcessesResponse struct {
-	Processes  []ProcessInfo `json:"processes"`
-	AutoKilled []string      `json:"auto_killed,omitempty"`
+	Processes       []ProcessInfo        `json:"processes"`
+	AutoKilled      []string             `json:"auto_killed,omitempty"`
+	AutoKillFailed  []ProcessKillFailure `json:"auto_kill_failed,omitempty"`
 }

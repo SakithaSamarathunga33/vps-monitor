@@ -167,9 +167,11 @@ func GetProcesses(ctx context.Context, store *KillOnSightStore) (*models.Process
 		suspicious       bool
 		suspiciousReason string
 		processType      string
+		killError        string
 	}
 
 	var autoKilled []string
+	var autoKillFailed []models.ProcessKillFailure
 	entries := make([]entry, 0, len(procs))
 
 	for _, p := range procs {
@@ -185,9 +187,24 @@ func GetProcesses(ctx context.Context, store *KillOnSightStore) (*models.Process
 
 		// Auto-kill if on the kill-on-sight list.
 		if store != nil && store.Contains(name) {
-			_ = p.KillWithContext(ctx)
-			autoKilled = append(autoKilled, name)
-			cpuHistory.Delete(p.Pid)
+			killErr := p.KillWithContext(ctx)
+			if killErr == nil {
+				autoKilled = append(autoKilled, name)
+				cpuHistory.Delete(p.Pid)
+				continue
+			}
+
+			autoKillFailed = append(autoKillFailed, models.ProcessKillFailure{
+				PID:   p.Pid,
+				Name:  name,
+				Error: killErr.Error(),
+			})
+			entries = append(entries, entry{
+				pid: p.Pid, name: name, cpu: cpu,
+				suspicious: true, suspiciousReason: "Kill-on-sight failed",
+				processType: classifyProcess(name), killError: killErr.Error(),
+			})
+			cpuHistory.Store(p.Pid, cpu)
 			continue
 		}
 
@@ -218,12 +235,14 @@ func GetProcesses(ctx context.Context, store *KillOnSightStore) (*models.Process
 			Suspicious:       e.suspicious,
 			SuspiciousReason: e.suspiciousReason,
 			ProcessType:      e.processType,
+			KillError:        e.killError,
 		}
 	}
 
 	return &models.ProcessesResponse{
-		Processes:  result,
-		AutoKilled: autoKilled,
+		Processes:      result,
+		AutoKilled:     autoKilled,
+		AutoKillFailed: autoKillFailed,
 	}, nil
 }
 

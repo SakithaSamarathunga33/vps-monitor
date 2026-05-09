@@ -58,6 +58,8 @@ function ReasonBadge({ reason }: { reason: string }) {
       "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400",
     "System process impersonation":
       "bg-red-500/10 text-red-600 border-red-500/20 dark:text-red-400",
+    "Kill-on-sight failed":
+      "bg-red-500/10 text-red-600 border-red-500/20 dark:text-red-400",
   };
   const cls =
     colors[reason] ?? "bg-muted text-muted-foreground border-border";
@@ -120,7 +122,7 @@ function SuspiciousRow({ proc }: { proc: ProcessInfo }) {
       addMutation.mutate(proc.name, {
         onSuccess: () =>
           toast.warning(
-            `Auto-kill enabled for "${proc.name}" — will be killed on next detection`
+            `Auto-kill enabled for "${proc.name}" - will be killed on next detection`
           ),
       });
     }
@@ -153,6 +155,11 @@ function SuspiciousRow({ proc }: { proc: ProcessInfo }) {
       </TableCell>
       <TableCell>
         <ReasonBadge reason={proc.suspicious_reason ?? "Unknown"} />
+        {proc.kill_error && (
+          <p className="mt-1 max-w-72 text-xs text-muted-foreground">
+            {proc.kill_error}
+          </p>
+        )}
       </TableCell>
       <TableCell>
         <ProcessTypeBadge type={proc.process_type || "User/unknown task"} />
@@ -180,7 +187,7 @@ function SuspiciousRow({ proc }: { proc: ProcessInfo }) {
               size="sm"
               disabled={killMutation.isPending}
             >
-              {killMutation.isPending ? "Killing…" : "Kill"}
+              {killMutation.isPending ? "Killing..." : "Kill"}
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
@@ -211,6 +218,7 @@ export function ProcessesPage() {
   const { data, isLoading, isError } = useProcesses();
 
   const autoKilledRef = useRef<Set<string>>(new Set());
+  const autoKillFailedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (!data?.auto_killed?.length) return;
@@ -225,6 +233,23 @@ export function ProcessesPage() {
     }, 10000);
     return () => clearTimeout(timer);
   }, [data?.auto_killed]);
+
+  useEffect(() => {
+    if (!data?.auto_kill_failed?.length) return;
+    for (const failure of data.auto_kill_failed) {
+      const key = `${failure.pid}:${failure.error}`;
+      if (!autoKillFailedRef.current.has(key)) {
+        toast.error(
+          `Auto-kill failed for "${failure.name}" (PID ${failure.pid}): ${failure.error}`
+        );
+        autoKillFailedRef.current.add(key);
+      }
+    }
+    const timer = setTimeout(() => {
+      autoKillFailedRef.current.clear();
+    }, 10000);
+    return () => clearTimeout(timer);
+  }, [data?.auto_kill_failed]);
 
   const suspiciousProcesses = data?.processes.filter((p) => p.suspicious) ?? [];
   const allProcesses = data?.processes ?? [];
@@ -299,13 +324,13 @@ export function ProcessesPage() {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Top 20 by CPU · updates every 2s
+            Top 20 by CPU - updates every 2s
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           {isLoading && (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              Loading…
+              Loading...
             </p>
           )}
           {isError && (

@@ -8,11 +8,19 @@ export interface ProcessInfo {
   suspicious: boolean;
   suspicious_reason?: string;
   process_type: string;
+  kill_error?: string;
+}
+
+export interface ProcessKillFailure {
+  pid: number;
+  name: string;
+  error: string;
 }
 
 export interface ProcessesResponse {
   processes: ProcessInfo[];
   auto_killed?: string[];
+  auto_kill_failed?: ProcessKillFailure[];
 }
 
 export async function getProcesses(): Promise<ProcessesResponse> {
