@@ -2,6 +2,7 @@ package system
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,6 +16,11 @@ type KillOnSightStore struct {
 	path  string
 	mu    sync.RWMutex
 	names map[string]struct{}
+}
+
+var protectedExactKillOnSightNames = map[string]struct{}{
+	"apache2": {}, "caddy": {}, "haproxy": {}, "httpd": {}, "nginx": {},
+	"mysql": {}, "mysqld": {}, "postgres": {}, "redis-server": {},
 }
 
 // NewKillOnSightStore loads (or creates) the kill-on-sight list from dataDir.
@@ -35,6 +41,9 @@ func (s *KillOnSightStore) Contains(name string) bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	for rule := range s.names {
+		if IsProtectedExactKillOnSightName(rule) {
+			continue
+		}
 		if killOnSightRuleMatches(rule, name) {
 			return true
 		}
@@ -44,6 +53,9 @@ func (s *KillOnSightStore) Contains(name string) bool {
 
 // Add adds name to the kill-on-sight list and persists it.
 func (s *KillOnSightStore) Add(name string) error {
+	if IsProtectedExactKillOnSightName(name) {
+		return fmt.Errorf("%q is a protected service name; use a more specific wildcard or executable-path investigation", name)
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.names[name] = struct{}{}
@@ -94,6 +106,15 @@ func (s *KillOnSightStore) save() error {
 		return err
 	}
 	return os.WriteFile(s.path, data, 0644)
+}
+
+func IsProtectedExactKillOnSightName(name string) bool {
+	normalized := strings.ToLower(strings.TrimSpace(name))
+	if strings.Contains(normalized, "*") {
+		return false
+	}
+	_, protected := protectedExactKillOnSightNames[normalized]
+	return protected
 }
 
 func killOnSightRuleMatches(rule, name string) bool {

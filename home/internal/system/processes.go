@@ -149,6 +149,9 @@ func isSystemProcessNameImpostor(name string) bool {
 
 func suggestedKillOnSightName(name string) string {
 	lowerName := strings.ToLower(name)
+	if IsProtectedExactKillOnSightName(lowerName) {
+		return ""
+	}
 	for _, prefix := range systemProcessNamePrefixes {
 		if hasStrictRandomizedSuffix(lowerName, prefix) {
 			return prefix + "*"

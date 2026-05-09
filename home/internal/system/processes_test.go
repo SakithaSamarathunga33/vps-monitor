@@ -163,7 +163,7 @@ func TestSuggestedKillOnSightNameUsesFamilyForRandomizedNames(t *testing.T) {
 		"mmclinmtui-edit": "mmcli*",
 		"ipcrmavahi-brow": "ipcrm*",
 		"apt-getabc123":   "apt-get*",
-		"nginx":           "nginx",
+		"nginx":           "",
 	}
 
 	for input, want := range cases {

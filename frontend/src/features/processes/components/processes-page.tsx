@@ -94,6 +94,22 @@ function ProcessTypeBadge({ type }: { type: string }) {
   );
 }
 
+const protectedServiceNames = new Set([
+  "apache2",
+  "caddy",
+  "haproxy",
+  "httpd",
+  "nginx",
+  "mysql",
+  "mysqld",
+  "postgres",
+  "redis-server",
+]);
+
+function isProtectedServiceName(name: string): boolean {
+  return protectedServiceNames.has(name.toLowerCase());
+}
+
 function SuspiciousRow({ proc }: { proc: ProcessInfo }) {
   const killMutation = useKillProcess();
   const parentKillMutation = useKillProcess();
@@ -101,7 +117,9 @@ function SuspiciousRow({ proc }: { proc: ProcessInfo }) {
   const removeMutation = useRemoveKillOnSight();
   const { data: kosList } = useKillOnSight();
 
+  const protectedService = isProtectedServiceName(proc.name);
   const killOnSightName = proc.suggested_kill_on_sight_name || proc.name;
+  const canUseKillOnSight = Boolean(proc.suggested_kill_on_sight_name);
   const activeKillOnSightName = kosList?.names.includes(killOnSightName)
     ? killOnSightName
     : proc.name;
@@ -136,6 +154,12 @@ function SuspiciousRow({ proc }: { proc: ProcessInfo }) {
   };
 
   const handleToggleKillOnSight = () => {
+    if (!canUseKillOnSight) {
+      toast.error(
+        `"${proc.name}" is a protected service name. Inspect the source before killing it.`
+      );
+      return;
+    }
     if (isKillOnSight) {
       removeMutation.mutate(activeKillOnSightName, {
         onSuccess: () =>
@@ -222,12 +246,20 @@ function SuspiciousRow({ proc }: { proc: ProcessInfo }) {
             <Switch
               checked={isKillOnSight}
               onCheckedChange={handleToggleKillOnSight}
-              disabled={addMutation.isPending || removeMutation.isPending}
+              disabled={
+                !canUseKillOnSight ||
+                addMutation.isPending ||
+                removeMutation.isPending
+              }
               aria-label={`Kill on sight: ${proc.name}`}
             />
           </TooltipTrigger>
           <TooltipContent>
-            {isKillOnSight ? "Disable auto-kill" : `Auto-kill ${killOnSightName}`}
+            {!canUseKillOnSight
+              ? "Protected service name"
+              : isKillOnSight
+                ? "Disable auto-kill"
+                : `Auto-kill ${killOnSightName}`}
           </TooltipContent>
         </Tooltip>
       </TableCell>
@@ -278,13 +310,16 @@ function SuspiciousRow({ proc }: { proc: ProcessInfo }) {
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Kill "{proc.name}"?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This sends SIGKILL to PID {proc.pid}. The process will be
-                  terminated immediately and cannot be recovered.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Kill "{proc.name}"?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This sends SIGKILL to PID {proc.pid}. The process will be
+                    terminated immediately and cannot be recovered.
+                    {protectedService
+                      ? " This name is used by a common web/database service; killing it may take sites offline."
+                      : ""}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction

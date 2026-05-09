@@ -95,3 +95,18 @@ func TestKillOnSightStoreContainsWildcardPrefixRule(t *testing.T) {
 		t.Fatal("expected wildcard rule not to match shorter unrelated name")
 	}
 }
+
+func TestKillOnSightStoreRejectsProtectedExactServiceName(t *testing.T) {
+	dir := t.TempDir()
+	store, err := NewKillOnSightStore(dir)
+	if err != nil {
+		t.Fatalf("NewKillOnSightStore() error = %v", err)
+	}
+
+	if err := store.Add("nginx"); err == nil {
+		t.Fatal("expected protected nginx name to be rejected")
+	}
+	if store.Contains("nginx") {
+		t.Fatal("expected protected nginx name not to match kill-on-sight")
+	}
+}
