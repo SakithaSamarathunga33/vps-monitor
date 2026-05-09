@@ -183,12 +183,19 @@ func main() {
 		log.Println("Configuration reloaded successfully")
 	})
 
+	// Kill-on-sight store (persists process blocklist across restarts)
+	killOnSight, err := system.NewKillOnSightStore("/data")
+	if err != nil {
+		log.Printf("Warning: failed to init kill-on-sight store: %v", err)
+	}
+
 	routerOpts := &api.RouterOptions{
 		AlertMonitor:   alertMonitor,
 		BotService:     telegramBot,
 		ScanDB:         scanDB,
 		ScannerService: scannerService,
 		AutoScanner:    autoScanner,
+		KillOnSight:    killOnSight,
 	}
 	apiRouter := api.NewRouter(registry, manager, routerOpts)
 
