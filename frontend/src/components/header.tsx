@@ -38,12 +38,14 @@ export function Header() {
             return (
               <Button
                 key={link.to}
-                variant={isActive ? "secondary" : "ghost"}
+                variant="ghost"
                 size="sm"
                 asChild
                 className={cn(
-                  "gap-2",
-                  isActive && "bg-primary/10 text-primary hover:bg-primary/20"
+                  "gap-2 text-sm font-medium",
+                  isActive
+                    ? "bg-primary/10 text-primary hover:bg-primary/15"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 <Link to={link.to}>
@@ -54,13 +56,14 @@ export function Header() {
             );
           })}
           <Button
-            variant={location.pathname.startsWith("/alerts") ? "secondary" : "ghost"}
+            variant="ghost"
             size="sm"
             asChild
             className={cn(
-              "gap-2",
-              location.pathname.startsWith("/alerts") &&
-                "bg-primary/10 text-primary hover:bg-primary/20"
+              "gap-2 text-sm font-medium",
+              location.pathname.startsWith("/alerts")
+                ? "bg-primary/10 text-primary hover:bg-primary/15"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             <Link to="/alerts">
