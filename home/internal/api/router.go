@@ -18,6 +18,7 @@ import (
 	"github.com/hhftechnology/vps-monitor/internal/scanner"
 	"github.com/hhftechnology/vps-monitor/internal/services"
 	"github.com/hhftechnology/vps-monitor/internal/static"
+	"github.com/hhftechnology/vps-monitor/internal/system"
 )
 
 type botRelayService interface {
@@ -39,6 +40,7 @@ type APIRouter struct {
 	scanHandlers  *ScanHandlers
 	botService    botRelayService
 	statsDB       *scanner.ScanDB
+	killOnSight   *system.KillOnSightStore
 }
 
 // RouterOptions contains optional dependencies for the router
@@ -48,6 +50,7 @@ type RouterOptions struct {
 	AutoScanner    *scanner.AutoScanner
 	BotService     botRelayService
 	ScanDB         *scanner.ScanDB
+	KillOnSight    *system.KillOnSightStore
 }
 
 func NewRouter(registry *services.Registry, manager *config.Manager, opts *RouterOptions) *chi.Mux {
@@ -61,6 +64,7 @@ func NewRouter(registry *services.Registry, manager *config.Manager, opts *Route
 	if opts != nil {
 		r.botService = opts.BotService
 		r.statsDB = opts.ScanDB
+		r.killOnSight = opts.KillOnSight
 		if r.statsDB == nil && opts.ScannerService != nil {
 			r.statsDB = opts.ScannerService.Store().DB()
 		}
@@ -149,6 +153,7 @@ func (ar *APIRouter) Routes() *chi.Mux {
 			ar.registerAlertRoutes(protected)
 			ar.registerBotRoutes(protected)
 			ar.registerScanRoutes(protected)
+			ar.registerProcessRoutes(protected)
 		})
 	})
 
@@ -271,6 +276,13 @@ func (ar *APIRouter) registerScanRoutes(r chi.Router) {
 		mutating.Delete("/scan/sbom/history/{id}", ar.scanHandlers.DeleteSBOMHistory)
 		mutating.Post("/scan/sbom", ar.scanHandlers.StartSBOMGeneration)
 	})
+}
+
+func (ar *APIRouter) registerProcessRoutes(r chi.Router) {
+	r.Post("/system/processes/{pid}/kill", ar.KillProcess)
+	r.Get("/system/processes/kill-on-sight", ar.GetKillOnSight)
+	r.Post("/system/processes/kill-on-sight", ar.AddKillOnSight)
+	r.Delete("/system/processes/kill-on-sight/{name}", ar.RemoveKillOnSight)
 }
 
 func (ar *APIRouter) registerSettingsRoutes(r chi.Router) {

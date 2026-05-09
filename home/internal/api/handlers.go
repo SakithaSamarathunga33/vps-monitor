@@ -141,12 +141,12 @@ func (ar *APIRouter) GetSystemStats(w http.ResponseWriter, r *http.Request) {
 
 func (ar *APIRouter) GetProcesses(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	procs, err := system.GetProcesses(ctx)
+	resp, err := system.GetProcesses(ctx, ar.killOnSight)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	WriteJsonResponse(w, http.StatusOK, models.ProcessesResponse{Processes: procs})
+	WriteJsonResponse(w, http.StatusOK, resp)
 }
 
 func (ar *APIRouter) GetContainers(w http.ResponseWriter, r *http.Request) {
