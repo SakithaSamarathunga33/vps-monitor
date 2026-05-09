@@ -7,9 +7,8 @@ import {
   PlayIcon,
   SquareIcon,
 } from "lucide-react";
-import { useMemo } from "react";
 
-import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -61,19 +60,11 @@ export function ContainerStatsCard({
     onToggle();
   };
 
-  const cpuColor = useMemo(() => {
-    if (!stats) return "bg-muted";
-    if (stats.cpu_percent > 80) return "bg-red-500";
-    if (stats.cpu_percent > 60) return "bg-yellow-500";
+  function metricColor(percent: number): string {
+    if (percent > 80) return "bg-red-500";
+    if (percent > 60) return "bg-amber-500";
     return "bg-green-500";
-  }, [stats]);
-
-  const memoryColor = useMemo(() => {
-    if (!stats) return "bg-muted";
-    if (stats.memory_percent > 80) return "bg-red-500";
-    if (stats.memory_percent > 60) return "bg-yellow-500";
-    return "bg-green-500";
-  }, [stats]);
+  }
 
   return (
     <Card className="flex flex-col">
@@ -88,9 +79,15 @@ export function ContainerStatsCard({
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <Badge variant={isConnected ? "default" : "secondary"} className="text-xs">
+            <span className={cn(
+              "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
+              isConnected
+                ? "bg-green-500/10 text-green-600 border border-green-500/20 dark:text-green-400"
+                : "bg-muted text-muted-foreground border border-border"
+            )}>
+              <span className="size-1.5 rounded-full bg-current" />
               {isConnected ? "Live" : "Off"}
-            </Badge>
+            </span>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -141,7 +138,7 @@ export function ContainerStatsCard({
                 </div>
                 <span className="font-medium">{stats.cpu_percent.toFixed(1)}%</span>
               </div>
-              <Progress value={Math.min(stats.cpu_percent, 100)} className="h-1.5" indicatorClassName={cpuColor} />
+              <Progress value={Math.min(stats.cpu_percent, 100)} className="h-1.5" indicatorClassName={metricColor(stats.cpu_percent)} />
             </div>
 
             {/* Memory */}
@@ -155,7 +152,7 @@ export function ContainerStatsCard({
                   {formatBytes(stats.memory_usage)} / {formatBytes(stats.memory_limit)}
                 </span>
               </div>
-              <Progress value={Math.min(stats.memory_percent, 100)} className="h-1.5" indicatorClassName={memoryColor} />
+              <Progress value={Math.min(stats.memory_percent, 100)} className="h-1.5" indicatorClassName={metricColor(stats.memory_percent)} />
             </div>
 
             {/* Network I/O */}
