@@ -119,12 +119,12 @@ export function NetworksTable() {
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Host</TableHead>
-                  <TableHead>Driver</TableHead>
-                  <TableHead>Scope</TableHead>
-                  <TableHead className="w-[80px]">Actions</TableHead>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Name</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Host</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Driver</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Scope</TableHead>
+                  <TableHead className="w-[80px] text-xs font-semibold uppercase tracking-wider text-muted-foreground">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

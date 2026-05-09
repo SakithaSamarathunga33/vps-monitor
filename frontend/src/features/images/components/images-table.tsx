@@ -228,12 +228,12 @@ export function ImagesTable() {
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Image</TableHead>
-                  <TableHead>Host</TableHead>
-                  <TableHead>Size</TableHead>
-                  <TableHead>Created</TableHead>
-                  {!data?.readOnly && <TableHead className="w-[180px]">Actions</TableHead>}
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Image</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Host</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Size</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Created</TableHead>
+                  {!data?.readOnly && <TableHead className="w-[180px] text-xs font-semibold uppercase tracking-wider text-muted-foreground">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
