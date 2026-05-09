@@ -90,9 +90,6 @@ function LoginPage() {
           </Button>
         </form>
 
-        <div className="text-center text-xs text-muted-foreground">
-          <p>by HHF Technology</p>
-        </div>
       </Card>
     </div>
   );
