@@ -75,14 +75,14 @@ export function getStateBadgeClass(state: string) {
 	const normalized = state.toLowerCase();
 	switch (normalized) {
 		case "running":
-			return "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400";
+			return "bg-green-500/10 text-green-600 dark:text-green-400";
 		case "paused":
-			return "bg-amber-500/10 text-amber-700 dark:text-amber-400";
+			return "bg-amber-500/10 text-amber-600 dark:text-amber-400";
 		case "exited":
 		case "dead":
-			return "bg-rose-500/10 text-rose-700 dark:text-rose-400";
+			return "bg-red-500/10 text-red-500";
 		case "restarting":
-			return "bg-blue-500/10 text-blue-700 dark:text-blue-400";
+			return "bg-blue-500/10 text-blue-600 dark:text-blue-400";
 		default:
 			return "bg-muted text-muted-foreground";
 	}

@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { Fragment } from "react";
 
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -39,8 +39,6 @@ import {
 	formatCreatedDate,
 	formatUptime,
 	getHistoricalValue,
-	getStateBadgeClass,
-	toTitleCase,
 } from "./container-utils";
 
 interface ContainersTableProps {
@@ -153,9 +151,7 @@ export function ContainersTable({
 					</TooltipProvider>
 				</TableCell>
 				<TableCell className="h-16 px-4">
-					<Badge className={`${getStateBadgeClass(container.state)} border-0`}>
-						{toTitleCase(container.state)}
-					</Badge>
+					<StatusBadge status={container.state} />
 				</TableCell>
 				<TableCell className="h-16 px-4 text-sm text-muted-foreground">
 					{formatUptime(container.created)}
@@ -335,23 +331,15 @@ export function ContainersTable({
 								aria-label="Select all containers on this page"
 							/>
 						</TableHead>
-						<TableHead className="h-12 px-4 font-medium">Name</TableHead>
-						<TableHead className="h-12 px-4 font-medium">Image</TableHead>
-						<TableHead className="h-12 px-4 font-medium w-[120px]">
-							State
-						</TableHead>
-						<TableHead className="h-12 px-4 font-medium">Uptime</TableHead>
-						<TableHead className="h-12 px-4 font-medium">Created</TableHead>
-						<TableHead className="h-12 px-4 font-medium">
-							CPU {statsInterval}
-						</TableHead>
-						<TableHead className="h-12 px-4 font-medium">
-							RAM {statsInterval}
-						</TableHead>
-						<TableHead className="h-12 px-4 font-medium">Command</TableHead>
-						<TableHead className="h-12 px-4 font-medium w-[160px]">
-							Actions
-						</TableHead>
+						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Name</TableHead>
+						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Image</TableHead>
+						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[130px]">State</TableHead>
+						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Uptime</TableHead>
+						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Created</TableHead>
+						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">CPU {statsInterval}</TableHead>
+						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">RAM {statsInterval}</TableHead>
+						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Command</TableHead>
+						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[160px]">Actions</TableHead>
 					</TableRow>
 				</TableHeader>
 				<TableBody>
