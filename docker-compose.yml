@@ -1,6 +1,8 @@
 services:
   vps-monitor:
-    image: hhftechnology/vps-monitor:latest
+    build:
+      context: .
+      dockerfile: ./home/Dockerfile
     container_name: vps-monitor
     restart: unless-stopped
     ports:
