@@ -2,6 +2,7 @@ package system
 
 import (
 	"context"
+	"runtime"
 	"sort"
 
 	"github.com/hhftechnology/vps-monitor/internal/models"
@@ -22,6 +23,11 @@ func GetProcesses(ctx context.Context) ([]models.ProcessInfo, error) {
 		cpu  float64
 	}
 
+	numCPU := float64(runtime.NumCPU())
+	if numCPU < 1 {
+		numCPU = 1
+	}
+
 	entries := make([]entry, 0, len(procs))
 	for _, p := range procs {
 		name, err := p.NameWithContext(ctx)
@@ -32,7 +38,7 @@ func GetProcesses(ctx context.Context) ([]models.ProcessInfo, error) {
 		if err != nil {
 			continue
 		}
-		entries = append(entries, entry{pid: p.Pid, name: name, cpu: cpu})
+		entries = append(entries, entry{pid: p.Pid, name: name, cpu: cpu / numCPU})
 	}
 
 	sort.Slice(entries, func(i, j int) bool {
