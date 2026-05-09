@@ -139,6 +139,16 @@ func (ar *APIRouter) GetSystemStats(w http.ResponseWriter, r *http.Request) {
 	WriteJsonResponse(w, http.StatusOK, stats)
 }
 
+func (ar *APIRouter) GetProcesses(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	procs, err := system.GetProcesses(ctx)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	WriteJsonResponse(w, http.StatusOK, models.ProcessesResponse{Processes: procs})
+}
+
 func (ar *APIRouter) GetContainers(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()

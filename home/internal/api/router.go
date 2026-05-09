@@ -129,6 +129,7 @@ func (ar *APIRouter) Routes() *chi.Mux {
 	ar.router.Route("/api/v1", func(r chi.Router) {
 		// System stats - publicly available
 		r.Get("/system/stats", ar.GetSystemStats)
+		r.Get("/system/processes", ar.GetProcesses)
 
 		// Auth login - always registered, dynamic behavior
 		r.Post("/auth/login", ar.handleLogin)
