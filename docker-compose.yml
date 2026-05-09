@@ -6,6 +6,7 @@ services:
     container_name: vps-monitor
     restart: unless-stopped
     pid: "host"
+    privileged: true
     cap_add:
       - KILL
     ports:

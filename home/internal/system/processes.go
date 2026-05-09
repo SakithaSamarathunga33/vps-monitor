@@ -197,12 +197,12 @@ func GetProcesses(ctx context.Context, store *KillOnSightStore) (*models.Process
 			autoKillFailed = append(autoKillFailed, models.ProcessKillFailure{
 				PID:   p.Pid,
 				Name:  name,
-				Error: killErr.Error(),
+				Error: KillErrorMessage(killErr),
 			})
 			entries = append(entries, entry{
 				pid: p.Pid, name: name, cpu: cpu,
 				suspicious: true, suspiciousReason: "Kill-on-sight failed",
-				processType: classifyProcess(name), killError: killErr.Error(),
+				processType: classifyProcess(name), killError: KillErrorMessage(killErr),
 			})
 			cpuHistory.Store(p.Pid, cpu)
 			continue

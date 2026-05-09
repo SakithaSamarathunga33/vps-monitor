@@ -2,13 +2,11 @@ package api
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
-	"os"
 	"strconv"
-	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/hhftechnology/vps-monitor/internal/system"
 	"github.com/shirou/gopsutil/v4/process"
 )
 
@@ -38,25 +36,14 @@ func (ar *APIRouter) KillProcess(w http.ResponseWriter, r *http.Request) {
 }
 
 func killProcessStatus(err error) int {
-	if isPermissionError(err) {
+	if system.IsKillPermissionError(err) {
 		return http.StatusForbidden
 	}
 	return http.StatusInternalServerError
 }
 
 func killProcessErrorMessage(err error) string {
-	if isPermissionError(err) {
-		return "permission denied: vps-monitor cannot signal this process. Run the container with host PID access and CAP_KILL/privileged permissions, or kill it manually on the host."
-	}
-	return err.Error()
-}
-
-func isPermissionError(err error) bool {
-	if errors.Is(err, os.ErrPermission) {
-		return true
-	}
-	msg := strings.ToLower(err.Error())
-	return strings.Contains(msg, "permission denied") || strings.Contains(msg, "operation not permitted")
+	return system.KillErrorMessage(err)
 }
 
 // GetKillOnSight handles GET /api/v1/system/processes/kill-on-sight
