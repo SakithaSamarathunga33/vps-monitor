@@ -213,6 +213,14 @@ function SuspiciousRow({ proc }: { proc: ProcessInfo }) {
       </TableCell>
       <TableCell className="max-w-80">
         <div className="space-y-1 text-xs">
+          {proc.systemd_unit && (
+            <div>
+              <span className="text-muted-foreground">Unit:</span>{" "}
+              <span className="font-medium text-red-600 dark:text-red-400">
+                {proc.systemd_unit}
+              </span>
+            </div>
+          )}
           {proc.parent_name && (
             <div>
               <span className="text-muted-foreground">Parent:</span>{" "}
@@ -235,9 +243,12 @@ function SuspiciousRow({ proc }: { proc: ProcessInfo }) {
               {proc.cmdline}
             </div>
           )}
-          {!proc.parent_name && !proc.exe_path && !proc.cmdline && (
+          {!proc.systemd_unit &&
+          !proc.parent_name &&
+          !proc.exe_path &&
+          !proc.cmdline ? (
             <span className="text-muted-foreground">Unknown</span>
-          )}
+          ) : null}
         </div>
       </TableCell>
       <TableCell>

@@ -40,6 +40,7 @@ type ProcessInfo struct {
 	ExePath                  string  `json:"exe_path,omitempty"`
 	Cmdline                  string  `json:"cmdline,omitempty"`
 	SourceHint               string  `json:"source_hint,omitempty"`
+	SystemdUnit              string  `json:"systemd_unit,omitempty"`
 }
 
 // ProcessKillFailure describes a kill-on-sight attempt that could not terminate

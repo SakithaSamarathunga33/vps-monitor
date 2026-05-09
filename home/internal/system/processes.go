@@ -3,6 +3,7 @@ package system
 import (
 	"context"
 	"os"
+	"path/filepath"
 	"runtime"
 	"sort"
 	"strconv"
@@ -210,11 +211,12 @@ func isASCIIAlnum(s string) bool {
 	return true
 }
 
-func getProcessSourceDetails(ctx context.Context, p *process.Process) (int32, string, string, string) {
+func getProcessSourceDetails(ctx context.Context, p *process.Process) (int32, string, string, string, string) {
 	var ppid int32
 	var parentName string
 	var exePath string
 	var cmdline string
+	var systemdUnit string
 
 	if pid, err := p.PpidWithContext(ctx); err == nil {
 		ppid = pid
@@ -230,11 +232,32 @@ func getProcessSourceDetails(ctx context.Context, p *process.Process) (int32, st
 	if cmd, err := p.CmdlineWithContext(ctx); err == nil {
 		cmdline = cmd
 	}
+	systemdUnit = processSystemdUnit(p.Pid)
 
-	return ppid, parentName, exePath, cmdline
+	return ppid, parentName, exePath, cmdline, systemdUnit
 }
 
-func sourceHint(ppid int32, parentName, exePath, cmdline string) string {
+func processSystemdUnit(pid int32) string {
+	data, err := os.ReadFile(filepath.Join("/proc", strconv.FormatInt(int64(pid), 10), "cgroup"))
+	if err != nil {
+		return ""
+	}
+	for _, line := range strings.Split(string(data), "\n") {
+		for _, part := range strings.Split(line, "/") {
+			if strings.HasSuffix(part, ".service") ||
+				strings.HasSuffix(part, ".scope") ||
+				strings.HasSuffix(part, ".timer") {
+				return part
+			}
+		}
+	}
+	return ""
+}
+
+func sourceHint(ppid int32, parentName, exePath, cmdline, systemdUnit string) string {
+	if systemdUnit != "" {
+		return "systemd unit: " + systemdUnit
+	}
 	if exePath != "" {
 		for _, prefix := range suspiciousExePrefixes {
 			if strings.HasPrefix(exePath, prefix) {
@@ -280,6 +303,7 @@ func GetProcesses(ctx context.Context, store *KillOnSightStore) (*models.Process
 		killError        string
 		exePath          string
 		cmdline          string
+		systemdUnit      string
 	}
 
 	var autoKilled []string
@@ -296,7 +320,7 @@ func GetProcesses(ctx context.Context, store *KillOnSightStore) (*models.Process
 			continue
 		}
 		cpu = cpu / numCPU
-		ppid, parentName, exePath, cmdline := getProcessSourceDetails(ctx, p)
+		ppid, parentName, exePath, cmdline, systemdUnit := getProcessSourceDetails(ctx, p)
 
 		// Auto-kill if on the kill-on-sight list.
 		if store != nil && store.Contains(name) {
@@ -316,7 +340,7 @@ func GetProcesses(ctx context.Context, store *KillOnSightStore) (*models.Process
 				pid: p.Pid, name: name, cpu: cpu,
 				suspicious: true, suspiciousReason: "Kill-on-sight failed",
 				processType: classifyProcess(name), killError: KillErrorMessage(killErr),
-				ppid: ppid, parentName: parentName, exePath: exePath, cmdline: cmdline,
+				ppid: ppid, parentName: parentName, exePath: exePath, cmdline: cmdline, systemdUnit: systemdUnit,
 			})
 			cpuHistory.Store(p.Pid, cpu)
 			continue
@@ -329,7 +353,7 @@ func GetProcesses(ctx context.Context, store *KillOnSightStore) (*models.Process
 			pid: p.Pid, name: name, cpu: cpu,
 			suspicious: suspicious, suspiciousReason: reason,
 			processType: classifyProcess(name),
-			ppid:        ppid, parentName: parentName, exePath: exePath, cmdline: cmdline,
+			ppid:        ppid, parentName: parentName, exePath: exePath, cmdline: cmdline, systemdUnit: systemdUnit,
 		})
 	}
 
@@ -356,7 +380,8 @@ func GetProcesses(ctx context.Context, store *KillOnSightStore) (*models.Process
 			SuggestedKillOnSightName: suggestedKillOnSightName(e.name),
 			ExePath:                  e.exePath,
 			Cmdline:                  e.cmdline,
-			SourceHint:               sourceHint(e.ppid, e.parentName, e.exePath, e.cmdline),
+			SourceHint:               sourceHint(e.ppid, e.parentName, e.exePath, e.cmdline, e.systemdUnit),
+			SystemdUnit:              e.systemdUnit,
 		}
 	}
 

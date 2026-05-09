@@ -174,8 +174,16 @@ func TestSuggestedKillOnSightNameUsesFamilyForRandomizedNames(t *testing.T) {
 }
 
 func TestSourceHintPrefersSuspiciousExecutablePath(t *testing.T) {
-	got := sourceHint(123, "bash", "/tmp/mmclinmtui-edit", "mmclinmtui-edit")
+	got := sourceHint(123, "bash", "/tmp/mmclinmtui-edit", "mmclinmtui-edit", "")
 	want := "Executable in temporary directory: /tmp/mmclinmtui-edit"
+	if got != want {
+		t.Fatalf("sourceHint() = %q, want %q", got, want)
+	}
+}
+
+func TestSourceHintPrefersSystemdUnit(t *testing.T) {
+	got := sourceHint(1, "systemd", "/usr/bin/ssh-keyscangunzip", "", "malware.service")
+	want := "systemd unit: malware.service"
 	if got != want {
 		t.Fatalf("sourceHint() = %q, want %q", got, want)
 	}

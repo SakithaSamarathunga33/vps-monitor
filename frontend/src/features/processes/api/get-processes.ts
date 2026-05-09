@@ -15,6 +15,7 @@ export interface ProcessInfo {
   exe_path?: string;
   cmdline?: string;
   source_hint?: string;
+  systemd_unit?: string;
 }
 
 export interface ProcessKillFailure {
