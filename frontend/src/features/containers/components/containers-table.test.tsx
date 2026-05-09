@@ -128,4 +128,47 @@ describe("ContainersTable", () => {
 
     expect(writeText).toHaveBeenCalledWith(baseContainer.image);
   });
+
+  it("moves command into an action button", () => {
+    const writeText = vi.fn();
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+
+    render(
+      <ContainersTable
+        error={null}
+        expandedGroups={[]}
+        filteredContainers={[baseContainer]}
+        groupBy="none"
+        groupedItems={null}
+        isError={false}
+        isLoading={false}
+        isReadOnly={false}
+        onDelete={vi.fn()}
+        onRetry={vi.fn()}
+        onRestart={vi.fn()}
+        onSelectAll={vi.fn()}
+        onStart={vi.fn()}
+        onStop={vi.fn()}
+        onToggleGroup={vi.fn()}
+        onToggleSelect={vi.fn()}
+        onViewLogs={vi.fn()}
+        onViewStats={vi.fn()}
+        pageItems={[baseContainer]}
+        pendingAction={null}
+        selectedIds={[]}
+        statsInterval="1h"
+      />,
+    );
+
+    expect(screen.queryByRole("columnheader", { name: "Command" })).toBeNull();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Copy command for container api" }),
+    );
+
+    expect(writeText).toHaveBeenCalledWith(baseContainer.command);
+  });
 });

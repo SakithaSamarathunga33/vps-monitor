@@ -20,7 +20,7 @@ var knownBadNames = map[string]struct{}{
 	"xmrig": {}, "minerd": {}, "kinsing": {}, "masscan": {},
 	"nmap": {}, "cryptonight": {}, "kdevtmpfsi": {}, "kworkerds": {},
 	"sysupdate": {}, "networkservice": {}, "ld-musl": {}, "stratum+tcp": {},
-	"apt-cdrommouset": {},
+	"apt-cdrommouset": {}, "xkbevdsort": {},
 }
 
 var suspiciousExePrefixes = []string{
@@ -30,7 +30,7 @@ var suspiciousExePrefixes = []string{
 var systemProcessNamePrefixes = []string{
 	"apt-cdrom", "apt-get", "apt-cache", "dpkg",
 	"systemd", "sshd", "cron", "crond", "dockerd", "containerd",
-	"kworker", "ksoftirqd",
+	"kworker", "ksoftirqd", "xkbevd",
 }
 
 // checkSuspicious runs all four heuristics and returns (suspicious, reason).

@@ -154,6 +154,7 @@ func (ar *APIRouter) Routes() *chi.Mux {
 			ar.registerBotRoutes(protected)
 			ar.registerScanRoutes(protected)
 			ar.registerProcessRoutes(protected)
+			ar.registerSystemRoutes(protected)
 		})
 	})
 
@@ -283,6 +284,15 @@ func (ar *APIRouter) registerProcessRoutes(r chi.Router) {
 	r.Get("/system/processes/kill-on-sight", ar.GetKillOnSight)
 	r.Post("/system/processes/kill-on-sight", ar.AddKillOnSight)
 	r.Delete("/system/processes/kill-on-sight/{name}", ar.RemoveKillOnSight)
+}
+
+func (ar *APIRouter) registerSystemRoutes(r chi.Router) {
+	r.Group(func(mutating chi.Router) {
+		mutating.Use(middleware.ReadOnly(func() bool {
+			return ar.registry.Config().ReadOnly
+		}))
+		mutating.Post("/system/docker-builder-prune", ar.PruneDockerBuilderCache)
+	})
 }
 
 func (ar *APIRouter) registerSettingsRoutes(r chi.Router) {

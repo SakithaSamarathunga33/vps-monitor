@@ -6,6 +6,7 @@ import {
 	PlayIcon,
 	RotateCwIcon,
 	SquareIcon,
+	TerminalIcon,
 	Trash2Icon,
 } from "lucide-react";
 import { Fragment } from "react";
@@ -165,20 +166,6 @@ export function ContainersTable({
 				<TableCell className="h-16 px-4 text-sm text-muted-foreground">
 					{formatHistoricalMetric(memoryAverage)}
 				</TableCell>
-				<TableCell className="h-16 max-w-[300px] px-4 text-sm text-muted-foreground">
-					<TooltipProvider>
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<span className="block max-w-[280px] cursor-help truncate">
-									{container.command}
-								</span>
-							</TooltipTrigger>
-							<TooltipContent className="max-w-md break-all">
-								{container.command}
-							</TooltipContent>
-						</Tooltip>
-					</TooltipProvider>
-				</TableCell>
 				<TableCell className="h-16 px-4">
 					<TooltipProvider>
 						<div className="flex items-center gap-1">
@@ -299,6 +286,25 @@ export function ContainersTable({
 										variant="outline"
 										size="icon"
 										className="h-8 w-8"
+										onClick={() => {
+											navigator.clipboard?.writeText(container.command);
+										}}
+										disabled={busy || !container.command}
+										aria-label={`Copy command for container ${formatContainerName(container.names)}`}
+									>
+										<TerminalIcon className="size-4" />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent className="max-w-md break-all">
+									{container.command || "No command"}
+								</TooltipContent>
+							</Tooltip>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="outline"
+										size="icon"
+										className="h-8 w-8"
 										onClick={() => onViewStats(container)}
 										disabled={busy}
 										aria-label={`View stats for container ${formatContainerName(container.names)}`}
@@ -317,7 +323,7 @@ export function ContainersTable({
 
 	return (
 		<div className="overflow-x-auto rounded-lg border bg-card">
-			<Table className="min-w-[1180px]">
+			<Table className="min-w-[980px]">
 				<TableHeader>
 					<TableRow className="hover:bg-transparent border-b">
 						<TableHead className="h-12 w-10 px-4">
@@ -338,14 +344,13 @@ export function ContainersTable({
 						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Created</TableHead>
 						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">CPU {statsInterval}</TableHead>
 						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">RAM {statsInterval}</TableHead>
-						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Command</TableHead>
-						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[160px]">Actions</TableHead>
+						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[200px]">Actions</TableHead>
 					</TableRow>
 				</TableHeader>
 				<TableBody>
 					{isLoading ? (
 						<TableRow>
-							<TableCell colSpan={10} className="h-32">
+							<TableCell colSpan={9} className="h-32">
 								<div className="flex items-center justify-center text-sm text-muted-foreground">
 									<Spinner className="mr-2" />
 									Loading containers…
@@ -354,7 +359,7 @@ export function ContainersTable({
 						</TableRow>
 					) : isError ? (
 						<TableRow>
-							<TableCell colSpan={10} className="h-32">
+							<TableCell colSpan={9} className="h-32">
 								<div className="flex flex-col items-center gap-3 text-center">
 									<p className="text-sm text-muted-foreground">
 										{(error as Error)?.message || "Unable to load containers."}
@@ -367,7 +372,7 @@ export function ContainersTable({
 						</TableRow>
 					) : filteredContainers.length === 0 ? (
 						<TableRow>
-							<TableCell colSpan={10} className="h-32">
+							<TableCell colSpan={9} className="h-32">
 								<div className="text-center text-sm text-muted-foreground">
 									No containers found.
 								</div>
@@ -378,7 +383,7 @@ export function ContainersTable({
 							<Fragment key={group.project}>
 								<TableRow className="bg-muted/30 hover:bg-muted/30">
 									<TableCell
-										colSpan={10}
+										colSpan={9}
 										className="h-10 px-4 text-xs font-medium text-muted-foreground"
 									>
 										<button

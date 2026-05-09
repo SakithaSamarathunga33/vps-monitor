@@ -80,10 +80,24 @@ func TestCheckSuspiciousSystemProcessImpostor(t *testing.T) {
 	}
 }
 
+func TestCheckSuspiciousXkbevdImpostor(t *testing.T) {
+	sus, reason := checkSuspicious(nil, nil, "xkbevdsort", 66.4)
+	if !sus || reason != "Known malware name" {
+		t.Fatalf("expected xkbevdsort to be flagged as Known malware name, got sus=%v reason=%q", sus, reason)
+	}
+}
+
 func TestCheckSuspiciousSystemProcessImpostorPattern(t *testing.T) {
 	sus, reason := checkSuspicious(nil, nil, "apt-getabc123", 65.8)
 	if !sus || reason != "System process impersonation" {
 		t.Fatalf("expected apt-getabc123 to be flagged as System process impersonation, got sus=%v reason=%q", sus, reason)
+	}
+}
+
+func TestCheckSuspiciousXkbevdImpostorPattern(t *testing.T) {
+	sus, reason := checkSuspicious(nil, nil, "xkbevdabc123", 66.4)
+	if !sus || reason != "System process impersonation" {
+		t.Fatalf("expected xkbevdabc123 to be flagged as System process impersonation, got sus=%v reason=%q", sus, reason)
 	}
 }
 

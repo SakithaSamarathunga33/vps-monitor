@@ -45,6 +45,7 @@ import { ContainersStateSummary } from "./containers-state-summary";
 import { ContainersSummaryCards } from "./containers-summary-cards";
 import { ContainersTable } from "./containers-table";
 import { ContainersToolbar } from "./containers-toolbar";
+import { DiskSpaceMonitor } from "./disk-space-monitor";
 
 export function ContainersDashboard() {
 	const queryClient = useQueryClient();
@@ -522,6 +523,13 @@ export function ContainersDashboard() {
 				totalContainers={containers.length}
 				hostInfo={hostInfo}
 				systemUsage={systemUsage}
+			/>
+
+			<DiskSpaceMonitor
+				usedBytes={systemStats?.usage.diskUsed ?? 0}
+				totalBytes={systemStats?.usage.diskTotal ?? 0}
+				percent={systemStats?.usage.diskPercent ?? 0}
+				isReadOnly={isReadOnly}
 			/>
 
 			{hostErrors.length > 0 && (
