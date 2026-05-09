@@ -32,6 +32,7 @@ type ProcessInfo struct {
 	CPUPercent       float64 `json:"cpu_percent"`
 	Suspicious       bool    `json:"suspicious"`
 	SuspiciousReason string  `json:"suspicious_reason,omitempty"`
+	ProcessType      string  `json:"process_type"`
 }
 
 // ProcessesResponse is the JSON envelope returned by GET /api/v1/system/processes.

@@ -33,14 +33,27 @@ var systemProcessNamePrefixes = []string{
 	"kworker", "ksoftirqd", "xkbevd",
 }
 
-// checkSuspicious runs all four heuristics and returns (suspicious, reason).
+var dockerProcessNames = map[string]struct{}{
+	"buildctl": {}, "buildkitd": {}, "containerd": {}, "containerd-shim": {},
+	"docker": {}, "docker-init": {}, "docker-proxy": {}, "dockerd": {},
+	"runc": {}, "nccontd": {},
+}
+
+var systemProcessNames = map[string]struct{}{
+	"cron": {}, "crond": {}, "dbus-daemon": {}, "journald": {}, "ksoftirqd": {},
+	"kworker": {}, "sshd": {}, "systemd": {}, "systemd-journald": {},
+	"systemd-logind": {}, "systemd-resolved": {}, "systemd-timesyncd": {},
+	"systemd-udevd": {},
+}
+
+const suspiciousCPUThreshold = 50.0
+
+// checkSuspicious runs all heuristics and returns (suspicious, reason).
 // p may be nil when called from tests that only exercise name/CPU checks.
 func checkSuspicious(ctx context.Context, p *process.Process, name string, cpu float64) (bool, string) {
-	// 1. Sustained high CPU: flag if >80% on two consecutive polls.
-	if p != nil && cpu > 80 {
-		if prev, ok := cpuHistory.Load(p.Pid); ok && prev.(float64) > 80 {
-			return true, "High CPU"
-		}
+	// 1. High CPU: flag immediately so the UI can offer manual kill/ban controls.
+	if cpu > suspiciousCPUThreshold {
+		return true, "High CPU"
 	}
 
 	// 2. Known bad name.
@@ -80,6 +93,23 @@ func isPrintableASCII(s string) bool {
 		}
 	}
 	return true
+}
+
+func classifyProcess(name string) string {
+	lowerName := strings.ToLower(name)
+	if _, ok := dockerProcessNames[lowerName]; ok {
+		return "Docker task"
+	}
+	if strings.HasPrefix(lowerName, "containerd-shim") {
+		return "Docker task"
+	}
+	if _, ok := systemProcessNames[lowerName]; ok {
+		return "System task"
+	}
+	if isSystemProcessNameImpostor(name) {
+		return "System-like task"
+	}
+	return "User/unknown task"
 }
 
 func isSystemProcessNameImpostor(name string) bool {
@@ -136,6 +166,7 @@ func GetProcesses(ctx context.Context, store *KillOnSightStore) (*models.Process
 		cpu              float64
 		suspicious       bool
 		suspiciousReason string
+		processType      string
 	}
 
 	var autoKilled []string
@@ -166,6 +197,7 @@ func GetProcesses(ctx context.Context, store *KillOnSightStore) (*models.Process
 		entries = append(entries, entry{
 			pid: p.Pid, name: name, cpu: cpu,
 			suspicious: suspicious, suspiciousReason: reason,
+			processType: classifyProcess(name),
 		})
 	}
 
@@ -185,6 +217,7 @@ func GetProcesses(ctx context.Context, store *KillOnSightStore) (*models.Process
 			CPUPercent:       e.cpu,
 			Suspicious:       e.suspicious,
 			SuspiciousReason: e.suspiciousReason,
+			ProcessType:      e.processType,
 		}
 	}
 

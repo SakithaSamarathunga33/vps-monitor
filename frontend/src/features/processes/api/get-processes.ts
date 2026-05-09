@@ -7,6 +7,7 @@ export interface ProcessInfo {
   cpu_percent: number;
   suspicious: boolean;
   suspicious_reason?: string;
+  process_type: string;
 }
 
 export interface ProcessesResponse {

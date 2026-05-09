@@ -73,17 +73,56 @@ func TestCheckSuspiciousKnownBadName(t *testing.T) {
 	}
 }
 
+func TestCheckSuspiciousHighCPU(t *testing.T) {
+	sus, reason := checkSuspicious(nil, nil, "unknown-worker", 62)
+	if !sus || reason != "High CPU" {
+		t.Fatalf("expected unknown-worker above 50%% CPU to be flagged as High CPU, got sus=%v reason=%q", sus, reason)
+	}
+}
+
+func TestCheckSuspiciousFlagsDockerBuilderPruneRelatedHighCPU(t *testing.T) {
+	sus, reason := checkSuspicious(nil, nil, "nccontd", 62)
+	if !sus || reason != "High CPU" {
+		t.Fatalf("expected nccontd above 50%% CPU to be flagged as High CPU, got sus=%v reason=%q", sus, reason)
+	}
+}
+
+func TestClassifyDockerProcess(t *testing.T) {
+	if got := classifyProcess("nccontd"); got != "Docker task" {
+		t.Fatalf("classifyProcess(nccontd) = %q, want Docker task", got)
+	}
+}
+
+func TestClassifySystemLikeProcess(t *testing.T) {
+	if got := classifyProcess("apt-cdrommouset"); got != "System-like task" {
+		t.Fatalf("classifyProcess(apt-cdrommouset) = %q, want System-like task", got)
+	}
+}
+
+func TestClassifyUnknownProcess(t *testing.T) {
+	if got := classifyProcess("unknown-worker"); got != "User/unknown task" {
+		t.Fatalf("classifyProcess(unknown-worker) = %q, want User/unknown task", got)
+	}
+}
+
+func TestCheckSuspiciousDoesNotFlagNormalCPU(t *testing.T) {
+	sus, reason := checkSuspicious(nil, nil, "nginx", 50)
+	if sus {
+		t.Fatalf("expected nginx at 50%% CPU not to be flagged, got reason=%q", reason)
+	}
+}
+
 func TestCheckSuspiciousSystemProcessImpostor(t *testing.T) {
 	sus, reason := checkSuspicious(nil, nil, "apt-cdrommouset", 65.8)
-	if !sus || reason != "Known malware name" {
-		t.Fatalf("expected apt-cdrommouset to be flagged as Known malware name, got sus=%v reason=%q", sus, reason)
+	if !sus || reason != "High CPU" {
+		t.Fatalf("expected apt-cdrommouset to be flagged as High CPU, got sus=%v reason=%q", sus, reason)
 	}
 }
 
 func TestCheckSuspiciousXkbevdImpostor(t *testing.T) {
 	sus, reason := checkSuspicious(nil, nil, "xkbevdsort", 66.4)
-	if !sus || reason != "Known malware name" {
-		t.Fatalf("expected xkbevdsort to be flagged as Known malware name, got sus=%v reason=%q", sus, reason)
+	if !sus || reason != "High CPU" {
+		t.Fatalf("expected xkbevdsort to be flagged as High CPU, got sus=%v reason=%q", sus, reason)
 	}
 }
 

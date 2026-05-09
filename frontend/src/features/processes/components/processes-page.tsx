@@ -70,6 +70,28 @@ function ReasonBadge({ reason }: { reason: string }) {
   );
 }
 
+function ProcessTypeBadge({ type }: { type: string }) {
+  const colors: Record<string, string> = {
+    "Docker task":
+      "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400",
+    "System task":
+      "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400",
+    "System-like task":
+      "bg-red-500/10 text-red-600 border-red-500/20 dark:text-red-400",
+    "User/unknown task":
+      "bg-muted text-muted-foreground border-border",
+  };
+  const cls = colors[type] ?? "bg-muted text-muted-foreground border-border";
+
+  return (
+    <span
+      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${cls}`}
+    >
+      {type}
+    </span>
+  );
+}
+
 function SuspiciousRow({ proc }: { proc: ProcessInfo }) {
   const killMutation = useKillProcess();
   const addMutation = useAddKillOnSight();
@@ -131,6 +153,9 @@ function SuspiciousRow({ proc }: { proc: ProcessInfo }) {
       </TableCell>
       <TableCell>
         <ReasonBadge reason={proc.suspicious_reason ?? "Unknown"} />
+      </TableCell>
+      <TableCell>
+        <ProcessTypeBadge type={proc.process_type || "User/unknown task"} />
       </TableCell>
       <TableCell>
         <Tooltip>
@@ -250,6 +275,9 @@ export function ProcessesPage() {
                     Reason
                   </TableHead>
                   <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Type
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Kill on Sight
                   </TableHead>
                   <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -318,6 +346,11 @@ export function ProcessesPage() {
                           <ShieldAlertIcon className="size-3.5 shrink-0 text-red-500" />
                         )}
                         {proc.name}
+                        {proc.suspicious && (
+                          <ProcessTypeBadge
+                            type={proc.process_type || "User/unknown task"}
+                          />
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
