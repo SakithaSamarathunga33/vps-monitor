@@ -96,11 +96,19 @@ function ProcessTypeBadge({ type }: { type: string }) {
 
 function SuspiciousRow({ proc }: { proc: ProcessInfo }) {
   const killMutation = useKillProcess();
+  const parentKillMutation = useKillProcess();
   const addMutation = useAddKillOnSight();
   const removeMutation = useRemoveKillOnSight();
   const { data: kosList } = useKillOnSight();
 
-  const isKillOnSight = kosList?.names.includes(proc.name) ?? false;
+  const killOnSightName = proc.suggested_kill_on_sight_name || proc.name;
+  const activeKillOnSightName = kosList?.names.includes(killOnSightName)
+    ? killOnSightName
+    : proc.name;
+  const isKillOnSight =
+    kosList?.names.includes(killOnSightName) ||
+    kosList?.names.includes(proc.name) ||
+    false;
 
   const handleKill = () => {
     killMutation.mutate(proc.pid, {
@@ -113,16 +121,31 @@ function SuspiciousRow({ proc }: { proc: ProcessInfo }) {
     });
   };
 
+  const handleKillParent = () => {
+    if (!proc.ppid) return;
+    parentKillMutation.mutate(proc.ppid, {
+      onSuccess: () =>
+        toast.success(
+          `Killed parent "${proc.parent_name || "unknown"}" (PID ${proc.ppid})`
+        ),
+      onError: (err) =>
+        toast.error(
+          `Failed to kill parent: ${err instanceof Error ? err.message : "Unknown error"}`
+        ),
+    });
+  };
+
   const handleToggleKillOnSight = () => {
     if (isKillOnSight) {
-      removeMutation.mutate(proc.name, {
-        onSuccess: () => toast.info(`Auto-kill disabled for "${proc.name}"`),
+      removeMutation.mutate(activeKillOnSightName, {
+        onSuccess: () =>
+          toast.info(`Auto-kill disabled for "${activeKillOnSightName}"`),
       });
     } else {
-      addMutation.mutate(proc.name, {
+      addMutation.mutate(killOnSightName, {
         onSuccess: () =>
           toast.warning(
-            `Auto-kill enabled for "${proc.name}" - will be killed on next detection`
+            `Auto-kill enabled for "${killOnSightName}" - matching processes will be killed`
           ),
       });
     }
@@ -164,6 +187,35 @@ function SuspiciousRow({ proc }: { proc: ProcessInfo }) {
       <TableCell>
         <ProcessTypeBadge type={proc.process_type || "User/unknown task"} />
       </TableCell>
+      <TableCell className="max-w-80">
+        <div className="space-y-1 text-xs">
+          {proc.parent_name && (
+            <div>
+              <span className="text-muted-foreground">Parent:</span>{" "}
+              <span className="font-medium">{proc.parent_name}</span>
+              {proc.ppid ? (
+                <span className="font-mono text-muted-foreground">
+                  {" "}
+                  ({proc.ppid})
+                </span>
+              ) : null}
+            </div>
+          )}
+          {proc.exe_path && (
+            <div className="break-all font-mono text-muted-foreground">
+              {proc.exe_path}
+            </div>
+          )}
+          {!proc.exe_path && proc.cmdline && (
+            <div className="break-all font-mono text-muted-foreground">
+              {proc.cmdline}
+            </div>
+          )}
+          {!proc.parent_name && !proc.exe_path && !proc.cmdline && (
+            <span className="text-muted-foreground">Unknown</span>
+          )}
+        </div>
+      </TableCell>
       <TableCell>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -175,40 +227,76 @@ function SuspiciousRow({ proc }: { proc: ProcessInfo }) {
             />
           </TooltipTrigger>
           <TooltipContent>
-            {isKillOnSight ? "Disable auto-kill" : "Auto-kill on next detection"}
+            {isKillOnSight ? "Disable auto-kill" : `Auto-kill ${killOnSightName}`}
           </TooltipContent>
         </Tooltip>
       </TableCell>
       <TableCell>
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button
-              variant="destructive"
-              size="sm"
-              disabled={killMutation.isPending}
-            >
-              {killMutation.isPending ? "Killing..." : "Kill"}
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Kill "{proc.name}"?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This sends SIGKILL to PID {proc.pid}. The process will be
-                terminated immediately and cannot be recovered.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleKill}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+        <div className="flex flex-wrap gap-2">
+          {proc.ppid && proc.ppid > 1 && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  disabled={parentKillMutation.isPending}
+                >
+                  {parentKillMutation.isPending ? "Killing..." : "Kill parent"}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    Kill parent "{proc.parent_name || "unknown"}"?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This sends SIGKILL to parent PID {proc.ppid}. If it is the
+                    respawner, this should stop new renamed child processes from
+                    appearing.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleKillParent}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Kill Parent
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={killMutation.isPending}
               >
-                Kill Process
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+                {killMutation.isPending ? "Killing..." : "Kill child"}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Kill "{proc.name}"?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This sends SIGKILL to PID {proc.pid}. The process will be
+                  terminated immediately and cannot be recovered.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleKill}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Kill Process
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </TableCell>
     </TableRow>
   );
@@ -301,6 +389,9 @@ export function ProcessesPage() {
                   </TableHead>
                   <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Type
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Source
                   </TableHead>
                   <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Kill on Sight

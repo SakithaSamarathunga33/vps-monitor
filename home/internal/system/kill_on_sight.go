@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 )
 
@@ -28,12 +29,17 @@ func NewKillOnSightStore(dataDir string) (*KillOnSightStore, error) {
 	return s, nil
 }
 
-// Contains reports whether name is in the kill-on-sight list.
+// Contains reports whether name is in the kill-on-sight list. Entries ending
+// in * are treated as prefix rules, e.g. "byobu-screen*".
 func (s *KillOnSightStore) Contains(name string) bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	_, ok := s.names[name]
-	return ok
+	for rule := range s.names {
+		if killOnSightRuleMatches(rule, name) {
+			return true
+		}
+	}
+	return false
 }
 
 // Add adds name to the kill-on-sight list and persists it.
@@ -88,4 +94,17 @@ func (s *KillOnSightStore) save() error {
 		return err
 	}
 	return os.WriteFile(s.path, data, 0644)
+}
+
+func killOnSightRuleMatches(rule, name string) bool {
+	lowerRule := strings.ToLower(rule)
+	lowerName := strings.ToLower(name)
+	if lowerRule == lowerName {
+		return true
+	}
+	if strings.HasSuffix(lowerRule, "*") {
+		prefix := strings.TrimSuffix(lowerRule, "*")
+		return prefix != "" && strings.HasPrefix(lowerName, prefix)
+	}
+	return false
 }

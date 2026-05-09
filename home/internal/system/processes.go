@@ -5,6 +5,7 @@ import (
 	"os"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"unicode"
@@ -30,7 +31,13 @@ var suspiciousExePrefixes = []string{
 var systemProcessNamePrefixes = []string{
 	"apt-cdrom", "apt-get", "apt-cache", "dpkg",
 	"systemd", "sshd", "cron", "crond", "dockerd", "containerd",
-	"kworker", "ksoftirqd", "xkbevd",
+	"kworker", "ksoftirqd", "xkbevd", "mmcli", "nmtui", "ipcrm",
+	"avahi-browse",
+}
+
+var randomizedUserProcessPrefixes = []string{
+	"byobu-screen", "bzip2", "pslog", "xfce4-", "mmcli", "ipcrm",
+	"avahi-",
 }
 
 var dockerProcessNames = map[string]struct{}{
@@ -109,6 +116,9 @@ func classifyProcess(name string) string {
 	if isSystemProcessNameImpostor(name) {
 		return "System-like task"
 	}
+	if suggestedKillOnSightName(name) != name {
+		return "System-like task"
+	}
 	return "User/unknown task"
 }
 
@@ -137,6 +147,57 @@ func isSystemProcessNameImpostor(name string) bool {
 	return false
 }
 
+func suggestedKillOnSightName(name string) string {
+	lowerName := strings.ToLower(name)
+	for _, prefix := range systemProcessNamePrefixes {
+		if hasStrictRandomizedSuffix(lowerName, prefix) {
+			return prefix + "*"
+		}
+	}
+	for _, prefix := range randomizedUserProcessPrefixes {
+		if hasLooseRandomizedSuffix(lowerName, prefix) {
+			return prefix + "*"
+		}
+	}
+	return name
+}
+
+func hasStrictRandomizedSuffix(lowerName, prefix string) bool {
+	if lowerName == prefix || !strings.HasPrefix(lowerName, prefix) {
+		return false
+	}
+
+	suffix := strings.TrimPrefix(lowerName, prefix)
+	if len(suffix) < 3 {
+		return false
+	}
+
+	first := rune(suffix[0])
+	return first != '-' &&
+		first != '_' &&
+		first != '.' &&
+		first != '/' &&
+		isASCIIAlnum(suffix)
+}
+
+func hasLooseRandomizedSuffix(lowerName, prefix string) bool {
+	if lowerName == prefix || !strings.HasPrefix(lowerName, prefix) {
+		return false
+	}
+
+	suffix := strings.TrimPrefix(lowerName, prefix)
+	if len(suffix) < 3 {
+		return false
+	}
+
+	trimmed := strings.TrimLeft(suffix, "-_.")
+	if len(trimmed) < 3 {
+		return false
+	}
+	compact := strings.NewReplacer("-", "", "_", "", ".", "").Replace(trimmed)
+	return len(compact) >= 3 && isASCIIAlnum(compact)
+}
+
 func isASCIIAlnum(s string) bool {
 	for _, r := range s {
 		if r > unicode.MaxASCII || !(unicode.IsLetter(r) || unicode.IsDigit(r)) {
@@ -144,6 +205,50 @@ func isASCIIAlnum(s string) bool {
 		}
 	}
 	return true
+}
+
+func getProcessSourceDetails(ctx context.Context, p *process.Process) (int32, string, string, string) {
+	var ppid int32
+	var parentName string
+	var exePath string
+	var cmdline string
+
+	if pid, err := p.PpidWithContext(ctx); err == nil {
+		ppid = pid
+		if parent, err := process.NewProcessWithContext(ctx, pid); err == nil {
+			if name, err := parent.NameWithContext(ctx); err == nil {
+				parentName = name
+			}
+		}
+	}
+	if exe, err := p.ExeWithContext(ctx); err == nil {
+		exePath = exe
+	}
+	if cmd, err := p.CmdlineWithContext(ctx); err == nil {
+		cmdline = cmd
+	}
+
+	return ppid, parentName, exePath, cmdline
+}
+
+func sourceHint(ppid int32, parentName, exePath, cmdline string) string {
+	if exePath != "" {
+		for _, prefix := range suspiciousExePrefixes {
+			if strings.HasPrefix(exePath, prefix) {
+				return "Executable in temporary directory: " + exePath
+			}
+		}
+	}
+	if parentName != "" {
+		return parentName
+	}
+	if cmdline != "" {
+		return cmdline
+	}
+	if ppid > 0 {
+		return "PID " + strconv.FormatInt(int64(ppid), 10)
+	}
+	return ""
 }
 
 // GetProcesses returns the top 20 host processes sorted by CPU descending,
@@ -162,12 +267,16 @@ func GetProcesses(ctx context.Context, store *KillOnSightStore) (*models.Process
 
 	type entry struct {
 		pid              int32
+		ppid             int32
 		name             string
+		parentName       string
 		cpu              float64
 		suspicious       bool
 		suspiciousReason string
 		processType      string
 		killError        string
+		exePath          string
+		cmdline          string
 	}
 
 	var autoKilled []string
@@ -184,6 +293,7 @@ func GetProcesses(ctx context.Context, store *KillOnSightStore) (*models.Process
 			continue
 		}
 		cpu = cpu / numCPU
+		ppid, parentName, exePath, cmdline := getProcessSourceDetails(ctx, p)
 
 		// Auto-kill if on the kill-on-sight list.
 		if store != nil && store.Contains(name) {
@@ -203,6 +313,7 @@ func GetProcesses(ctx context.Context, store *KillOnSightStore) (*models.Process
 				pid: p.Pid, name: name, cpu: cpu,
 				suspicious: true, suspiciousReason: "Kill-on-sight failed",
 				processType: classifyProcess(name), killError: KillErrorMessage(killErr),
+				ppid: ppid, parentName: parentName, exePath: exePath, cmdline: cmdline,
 			})
 			cpuHistory.Store(p.Pid, cpu)
 			continue
@@ -215,6 +326,7 @@ func GetProcesses(ctx context.Context, store *KillOnSightStore) (*models.Process
 			pid: p.Pid, name: name, cpu: cpu,
 			suspicious: suspicious, suspiciousReason: reason,
 			processType: classifyProcess(name),
+			ppid:        ppid, parentName: parentName, exePath: exePath, cmdline: cmdline,
 		})
 	}
 
@@ -229,13 +341,19 @@ func GetProcesses(ctx context.Context, store *KillOnSightStore) (*models.Process
 	result := make([]models.ProcessInfo, len(entries))
 	for i, e := range entries {
 		result[i] = models.ProcessInfo{
-			PID:              e.pid,
-			Name:             e.name,
-			CPUPercent:       e.cpu,
-			Suspicious:       e.suspicious,
-			SuspiciousReason: e.suspiciousReason,
-			ProcessType:      e.processType,
-			KillError:        e.killError,
+			PID:                      e.pid,
+			PPID:                     e.ppid,
+			Name:                     e.name,
+			ParentName:               e.parentName,
+			CPUPercent:               e.cpu,
+			Suspicious:               e.suspicious,
+			SuspiciousReason:         e.suspiciousReason,
+			ProcessType:              e.processType,
+			KillError:                e.killError,
+			SuggestedKillOnSightName: suggestedKillOnSightName(e.name),
+			ExePath:                  e.exePath,
+			Cmdline:                  e.cmdline,
+			SourceHint:               sourceHint(e.ppid, e.parentName, e.exePath, e.cmdline),
 		}
 	}
 

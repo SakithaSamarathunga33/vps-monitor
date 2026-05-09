@@ -27,13 +27,19 @@ type HistoricalAverages struct {
 
 // ProcessInfo holds per-process CPU data for the processes endpoint.
 type ProcessInfo struct {
-	PID              int32   `json:"pid"`
-	Name             string  `json:"name"`
-	CPUPercent       float64 `json:"cpu_percent"`
-	Suspicious       bool    `json:"suspicious"`
-	SuspiciousReason string  `json:"suspicious_reason,omitempty"`
-	ProcessType      string  `json:"process_type"`
-	KillError        string  `json:"kill_error,omitempty"`
+	PID                      int32   `json:"pid"`
+	PPID                     int32   `json:"ppid,omitempty"`
+	Name                     string  `json:"name"`
+	ParentName               string  `json:"parent_name,omitempty"`
+	CPUPercent               float64 `json:"cpu_percent"`
+	Suspicious               bool    `json:"suspicious"`
+	SuspiciousReason         string  `json:"suspicious_reason,omitempty"`
+	ProcessType              string  `json:"process_type"`
+	KillError                string  `json:"kill_error,omitempty"`
+	SuggestedKillOnSightName string  `json:"suggested_kill_on_sight_name,omitempty"`
+	ExePath                  string  `json:"exe_path,omitempty"`
+	Cmdline                  string  `json:"cmdline,omitempty"`
+	SourceHint               string  `json:"source_hint,omitempty"`
 }
 
 // ProcessKillFailure describes a kill-on-sight attempt that could not terminate
@@ -46,7 +52,7 @@ type ProcessKillFailure struct {
 
 // ProcessesResponse is the JSON envelope returned by GET /api/v1/system/processes.
 type ProcessesResponse struct {
-	Processes       []ProcessInfo        `json:"processes"`
-	AutoKilled      []string             `json:"auto_killed,omitempty"`
-	AutoKillFailed  []ProcessKillFailure `json:"auto_kill_failed,omitempty"`
+	Processes      []ProcessInfo        `json:"processes"`
+	AutoKilled     []string             `json:"auto_killed,omitempty"`
+	AutoKillFailed []ProcessKillFailure `json:"auto_kill_failed,omitempty"`
 }

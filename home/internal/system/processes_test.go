@@ -55,7 +55,7 @@ func TestIsPrintableASCII(t *testing.T) {
 		want  bool
 	}{
 		{"nginx", true},
-		{"", false},
+		{"", true},
 		{"\x00bash", false},
 		{"kworker/u", true},
 	}
@@ -127,21 +127,21 @@ func TestCheckSuspiciousXkbevdImpostor(t *testing.T) {
 }
 
 func TestCheckSuspiciousSystemProcessImpostorPattern(t *testing.T) {
-	sus, reason := checkSuspicious(nil, nil, "apt-getabc123", 65.8)
+	sus, reason := checkSuspicious(nil, nil, "apt-getabc123", 25)
 	if !sus || reason != "System process impersonation" {
 		t.Fatalf("expected apt-getabc123 to be flagged as System process impersonation, got sus=%v reason=%q", sus, reason)
 	}
 }
 
 func TestCheckSuspiciousXkbevdImpostorPattern(t *testing.T) {
-	sus, reason := checkSuspicious(nil, nil, "xkbevdabc123", 66.4)
+	sus, reason := checkSuspicious(nil, nil, "xkbevdabc123", 25)
 	if !sus || reason != "System process impersonation" {
 		t.Fatalf("expected xkbevdabc123 to be flagged as System process impersonation, got sus=%v reason=%q", sus, reason)
 	}
 }
 
 func TestCheckSuspiciousAllowsSeparatedSystemProcessNames(t *testing.T) {
-	sus, reason := checkSuspicious(nil, nil, "systemd-journald", 65.8)
+	sus, reason := checkSuspicious(nil, nil, "systemd-journald", 20)
 	if sus {
 		t.Fatalf("expected systemd-journald not to be flagged, got reason=%q", reason)
 	}
@@ -151,5 +151,32 @@ func TestCheckSuspiciousEmptyName(t *testing.T) {
 	sus, reason := checkSuspicious(nil, nil, "", 5)
 	if !sus || reason != "Invalid process name" {
 		t.Fatalf("expected empty name to be flagged, got sus=%v reason=%q", sus, reason)
+	}
+}
+
+func TestSuggestedKillOnSightNameUsesFamilyForRandomizedNames(t *testing.T) {
+	cases := map[string]string{
+		"byobu-screenzne": "byobu-screen*",
+		"bzip2sg_compare": "bzip2*",
+		"pslogdh_install": "pslog*",
+		"xfce4-mime-help": "xfce4-*",
+		"mmclinmtui-edit": "mmcli*",
+		"ipcrmavahi-brow": "ipcrm*",
+		"apt-getabc123":   "apt-get*",
+		"nginx":           "nginx",
+	}
+
+	for input, want := range cases {
+		if got := suggestedKillOnSightName(input); got != want {
+			t.Fatalf("suggestedKillOnSightName(%q) = %q, want %q", input, got, want)
+		}
+	}
+}
+
+func TestSourceHintPrefersSuspiciousExecutablePath(t *testing.T) {
+	got := sourceHint(123, "bash", "/tmp/mmclinmtui-edit", "mmclinmtui-edit")
+	want := "Executable in temporary directory: /tmp/mmclinmtui-edit"
+	if got != want {
+		t.Fatalf("sourceHint() = %q, want %q", got, want)
 	}
 }

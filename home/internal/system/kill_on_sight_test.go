@@ -76,3 +76,22 @@ func TestKillOnSightStoreFileIsWritten(t *testing.T) {
 		t.Fatal("expected non-empty file")
 	}
 }
+
+func TestKillOnSightStoreContainsWildcardPrefixRule(t *testing.T) {
+	dir := t.TempDir()
+	store, err := NewKillOnSightStore(dir)
+	if err != nil {
+		t.Fatalf("NewKillOnSightStore() error = %v", err)
+	}
+
+	if err := store.Add("byobu-screen*"); err != nil {
+		t.Fatalf("Add() error = %v", err)
+	}
+
+	if !store.Contains("byobu-screenzne") {
+		t.Fatal("expected wildcard rule to match randomized byobu-screen process")
+	}
+	if store.Contains("byobu") {
+		t.Fatal("expected wildcard rule not to match shorter unrelated name")
+	}
+}
