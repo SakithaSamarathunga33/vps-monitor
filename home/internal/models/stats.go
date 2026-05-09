@@ -27,12 +27,15 @@ type HistoricalAverages struct {
 
 // ProcessInfo holds per-process CPU data for the processes endpoint.
 type ProcessInfo struct {
-	PID        int32   `json:"pid"`
-	Name       string  `json:"name"`
-	CPUPercent float64 `json:"cpu_percent"`
+	PID              int32   `json:"pid"`
+	Name             string  `json:"name"`
+	CPUPercent       float64 `json:"cpu_percent"`
+	Suspicious       bool    `json:"suspicious"`
+	SuspiciousReason string  `json:"suspicious_reason,omitempty"`
 }
 
 // ProcessesResponse is the JSON envelope returned by GET /api/v1/system/processes.
 type ProcessesResponse struct {
-	Processes []ProcessInfo `json:"processes"`
+	Processes  []ProcessInfo `json:"processes"`
+	AutoKilled []string      `json:"auto_killed,omitempty"`
 }
