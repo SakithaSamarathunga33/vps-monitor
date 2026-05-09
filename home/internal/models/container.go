@@ -12,7 +12,21 @@ type ContainerInfo struct {
 	Status          string            `json:"status"`
 	Labels          map[string]string `json:"labels,omitempty"`
 	Host            string            `json:"host"`
+	Runtime         string            `json:"runtime,omitempty"`
+	PM2             *PM2Info          `json:"pm2,omitempty"`
 	HistoricalStats *HistoricalStats  `json:"historical_stats,omitempty"`
+}
+
+type PM2Info struct {
+	ID           int     `json:"id"`
+	PID          int     `json:"pid"`
+	Namespace    string  `json:"namespace,omitempty"`
+	ScriptPath   string  `json:"script_path,omitempty"`
+	CWD          string  `json:"cwd,omitempty"`
+	Interpreter  string  `json:"interpreter,omitempty"`
+	RestartCount int     `json:"restart_count"`
+	CPUPercent   float64 `json:"cpu_percent"`
+	MemoryBytes  uint64  `json:"memory_bytes"`
 }
 
 type HistoricalStats struct {

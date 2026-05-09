@@ -96,7 +96,9 @@ export function groupByCompose(
 
 	containers.forEach((container) => {
 		const key =
-			container.labels?.[COMPOSE_PROJECT_LABEL]?.trim() || "Standalone";
+			container.runtime === "pm2"
+				? `PM2${container.pm2?.namespace ? ` / ${container.pm2.namespace}` : ""}`
+				: container.labels?.[COMPOSE_PROJECT_LABEL]?.trim() || "Standalone";
 		if (!groups.has(key)) {
 			groups.set(key, []);
 		}
@@ -119,6 +121,13 @@ export function getHistoricalValue(
 	interval: StatsInterval,
 	metric: "cpu" | "memory",
 ) {
+	if (container.runtime === "pm2" && container.pm2) {
+		if (metric === "cpu") {
+			return container.pm2.cpu_percent;
+		}
+		return null;
+	}
+
 	const stats = container.historical_stats;
 	if (!stats) {
 		return null;

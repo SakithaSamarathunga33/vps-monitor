@@ -14,6 +14,18 @@ export interface ContainerInfo {
   status: string
   labels?: Record<string, string>
   host: string
+  runtime?: "docker" | "pm2"
+  pm2?: {
+    id: number
+    pid: number
+    namespace?: string
+    script_path?: string
+    cwd?: string
+    interpreter?: string
+    restart_count: number
+    cpu_percent: number
+    memory_bytes: number
+  }
   historical_stats?: {
     cpu_1h: number
     memory_1h: number

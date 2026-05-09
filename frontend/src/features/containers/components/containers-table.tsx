@@ -102,8 +102,23 @@ export function ContainersTable({
 	const formatHistoricalMetric = (value: number | null) =>
 		value === null ? "Collecting" : `${value.toFixed(1)}%`;
 
+	const formatBytes = (bytes: number) => {
+		if (!Number.isFinite(bytes) || bytes <= 0) {
+			return "0 B";
+		}
+		const units = ["B", "KB", "MB", "GB"];
+		let value = bytes;
+		let unitIndex = 0;
+		while (value >= 1024 && unitIndex < units.length - 1) {
+			value /= 1024;
+			unitIndex++;
+		}
+		return `${value.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+	};
+
 	const renderContainerRow = (container: ContainerInfo) => {
 		const state = container.state.toLowerCase();
+		const isPM2 = container.runtime === "pm2";
 		const busy = isContainerBusy(container.id);
 		const startPending = isContainerActionPending("start", container.id);
 		const stopPending = isContainerActionPending("stop", container.id);
@@ -115,6 +130,19 @@ export function ContainersTable({
 			statsInterval,
 			"memory",
 		);
+		const runtimeLabel = isPM2 ? "PM2" : "Docker";
+		const runtimeDetails =
+			isPM2 && container.pm2
+				? [
+						container.pm2.namespace
+							? `namespace: ${container.pm2.namespace}`
+							: null,
+						container.pm2.pid ? `PID ${container.pm2.pid}` : null,
+						`restarts: ${container.pm2.restart_count}`,
+					]
+						.filter(Boolean)
+						.join(" - ")
+				: container.image;
 
 		return (
 			<TableRow key={container.id} className="hover:bg-muted/50">
@@ -127,7 +155,12 @@ export function ContainersTable({
 					/>
 				</TableCell>
 				<TableCell className="h-16 px-4 font-medium">
-					{formatContainerName(container.names)}
+					<div className="flex min-w-0 flex-col gap-1">
+						<span className="truncate">{formatContainerName(container.names)}</span>
+						<span className="inline-flex w-fit items-center rounded-md border px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+							{runtimeLabel}
+						</span>
+					</div>
 				</TableCell>
 				<TableCell className="h-16 px-4 text-sm text-muted-foreground">
 					<TooltipProvider>
@@ -137,16 +170,22 @@ export function ContainersTable({
 									type="button"
 									className="block max-w-[260px] cursor-pointer truncate"
 									onClick={() => {
-										navigator.clipboard?.writeText(container.image);
+										navigator.clipboard?.writeText(
+											isPM2
+												? container.pm2?.script_path || container.command
+												: container.image,
+										);
 									}}
-									title="Click to copy image name"
-									aria-label={`Copy ${container.image}`}
+									title="Click to copy source"
+									aria-label={`Copy ${runtimeDetails}`}
 								>
-									{container.image}
+									{runtimeDetails}
 								</button>
 							</TooltipTrigger>
 							<TooltipContent className="max-w-md break-all">
-								{container.image}
+								{isPM2
+									? container.pm2?.script_path || container.command || runtimeDetails
+									: container.image}
 							</TooltipContent>
 						</Tooltip>
 					</TooltipProvider>
@@ -164,12 +203,14 @@ export function ContainersTable({
 					{formatHistoricalMetric(cpuAverage)}
 				</TableCell>
 				<TableCell className="h-16 px-4 text-sm text-muted-foreground">
-					{formatHistoricalMetric(memoryAverage)}
+					{isPM2 && container.pm2
+						? formatBytes(container.pm2.memory_bytes)
+						: formatHistoricalMetric(memoryAverage)}
 				</TableCell>
 				<TableCell className="h-16 px-4">
 					<TooltipProvider>
 						<div className="flex items-center gap-1">
-							{state === "exited" && (
+							{state === "exited" && !isPM2 && (
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<span className="inline-block">
@@ -194,7 +235,7 @@ export function ContainersTable({
 									</TooltipContent>
 								</Tooltip>
 							)}
-							{state === "running" && (
+							{state === "running" && !isPM2 && (
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<span className="inline-block">
@@ -227,7 +268,7 @@ export function ContainersTable({
 											size="icon"
 											className="h-8 w-8"
 											onClick={() => onRestart(container)}
-											disabled={busy || isReadOnly}
+											disabled={busy || isReadOnly || isPM2}
 											aria-label={`Restart container ${formatContainerName(container.names)}`}
 										>
 											{restartPending ? (
@@ -239,7 +280,11 @@ export function ContainersTable({
 									</span>
 								</TooltipTrigger>
 								<TooltipContent>
-									{isReadOnly ? "Restart (Read-only mode)" : "Restart"}
+									{isPM2
+										? "PM2 actions are not wired yet"
+										: isReadOnly
+											? "Restart (Read-only mode)"
+											: "Restart"}
 								</TooltipContent>
 							</Tooltip>
 							<Tooltip>
@@ -250,7 +295,7 @@ export function ContainersTable({
 											size="icon"
 											className="h-8 w-8 text-destructive hover:bg-destructive hover:text-white"
 											onClick={() => onDelete(container)}
-											disabled={busy || isReadOnly}
+											disabled={busy || isReadOnly || isPM2}
 											aria-label={`Delete container ${formatContainerName(container.names)}`}
 										>
 											{removePending ? (
@@ -262,7 +307,11 @@ export function ContainersTable({
 									</span>
 								</TooltipTrigger>
 								<TooltipContent>
-									{isReadOnly ? "Delete (Read-only mode)" : "Delete"}
+									{isPM2
+										? "PM2 actions are not wired yet"
+										: isReadOnly
+											? "Delete (Read-only mode)"
+											: "Delete"}
 								</TooltipContent>
 							</Tooltip>
 							<Tooltip>
@@ -272,13 +321,15 @@ export function ContainersTable({
 										size="icon"
 										className="h-8 w-8"
 										onClick={() => onViewLogs(container)}
-										disabled={busy}
+										disabled={busy || isPM2}
 										aria-label={`View logs for container ${formatContainerName(container.names)}`}
 									>
 										<FileTextIcon className="size-4" />
 									</Button>
 								</TooltipTrigger>
-								<TooltipContent>View Logs</TooltipContent>
+								<TooltipContent>
+									{isPM2 ? "PM2 logs are not wired yet" : "View Logs"}
+								</TooltipContent>
 							</Tooltip>
 							<Tooltip>
 								<TooltipTrigger asChild>
@@ -306,13 +357,15 @@ export function ContainersTable({
 										size="icon"
 										className="h-8 w-8"
 										onClick={() => onViewStats(container)}
-										disabled={busy}
+										disabled={busy || isPM2}
 										aria-label={`View stats for container ${formatContainerName(container.names)}`}
 									>
 										<ActivityIcon className="size-4" />
 									</Button>
 								</TooltipTrigger>
-								<TooltipContent>View Stats</TooltipContent>
+								<TooltipContent>
+									{isPM2 ? "PM2 stats are shown in the row" : "View Stats"}
+								</TooltipContent>
 							</Tooltip>
 						</div>
 					</TooltipProvider>

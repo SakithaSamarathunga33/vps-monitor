@@ -39,7 +39,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=$TARGETARCH go build -o vps-monitor ./cmd/se
 FROM debian:bookworm-slim
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends ca-certificates openssh-client \
+  && apt-get install -y --no-install-recommends ca-certificates openssh-client util-linux \
   && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

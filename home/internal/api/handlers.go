@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -14,9 +15,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/hhftechnology/vps-monitor/internal/coolify"
+	"github.com/hhftechnology/vps-monitor/internal/docker"
 	"github.com/hhftechnology/vps-monitor/internal/models"
 	"github.com/hhftechnology/vps-monitor/internal/system"
-	"github.com/hhftechnology/vps-monitor/internal/docker"
 	"sync"
 )
 
@@ -152,39 +153,66 @@ func (ar *APIRouter) GetProcesses(w http.ResponseWriter, r *http.Request) {
 func (ar *APIRouter) GetContainers(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
+
+	allContainers := []models.ContainerInfo{}
+	hostErrorMessages := []map[string]string{}
+	hosts := any([]any{})
+
 	dockerClient, releaseDocker := ar.registry.AcquireDocker()
 	if dockerClient == nil {
 		releaseDocker()
-		http.Error(w, "docker client unavailable", http.StatusServiceUnavailable)
-		return
-	}
-	containersMap, hostErrors, err := dockerClient.ListContainersAllHosts(ctx)
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// Flatten the map for easier frontend consumption
-	allContainers := []models.ContainerInfo{}
-	for _, containers := range containersMap {
-		allContainers = append(allContainers, containers...)
-	}
-
-	ar.enrichContainersWithHistoricalStats(allContainers)
-
-	// Build host errors list for the frontend (graceful partial results)
-	hostErrorMessages := make([]map[string]string, 0, len(hostErrors))
-	for _, he := range hostErrors {
 		hostErrorMessages = append(hostErrorMessages, map[string]string{
-			"host":    he.HostName,
-			"message": he.Err.Error(),
+			"host":    "docker",
+			"message": "docker client unavailable",
 		})
+	} else {
+		defer releaseDocker()
+		hosts = dockerClient.GetHosts()
+
+		containersMap, hostErrors, err := dockerClient.ListContainersAllHosts(ctx)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// Flatten the map for easier frontend consumption
+		for _, containers := range containersMap {
+			for i := range containers {
+				if containers[i].Runtime == "" {
+					containers[i].Runtime = "docker"
+				}
+			}
+			allContainers = append(allContainers, containers...)
+		}
+
+		ar.enrichContainersWithHistoricalStats(allContainers)
+
+		// Build host errors list for the frontend (graceful partial results)
+		for _, he := range hostErrors {
+			hostErrorMessages = append(hostErrorMessages, map[string]string{
+				"host":    he.HostName,
+				"message": he.Err.Error(),
+			})
+		}
+	}
+
+	pm2Apps, err := system.GetPM2Apps(ctx)
+	if err != nil && !errors.Is(err, system.ErrPM2Unavailable) {
+		hostErrorMessages = append(hostErrorMessages, map[string]string{
+			"host":    "pm2",
+			"message": err.Error(),
+		})
+	}
+	allContainers = append(allContainers, pm2Apps...)
+
+	if len(allContainers) == 0 && dockerClient == nil && errors.Is(err, system.ErrPM2Unavailable) {
+		http.Error(w, "docker client unavailable and pm2 is not available", http.StatusServiceUnavailable)
+		return
 	}
 
 	WriteJsonResponse(w, http.StatusOK, map[string]any{
 		"containers":        allContainers,
-		"hosts":             dockerClient.GetHosts(),
+		"hosts":             hosts,
 		"readOnly":          ar.registry.Config().ReadOnly,
 		"hostErrors":        hostErrorMessages,
 		"coolifyConfigured": ar.registry.Coolify() != nil,

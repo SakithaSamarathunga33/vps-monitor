@@ -54,6 +54,10 @@ export function ContainersDashboard() {
 	const { data: systemStats } = useSystemStats();
 
 	const containers = data?.containers ?? [];
+	const totalPM2Apps = useMemo(
+		() => containers.filter((container) => container.runtime === "pm2").length,
+		[containers],
+	);
 	const isReadOnly = data?.readOnly ?? false;
 	const hosts = data?.hosts ?? [];
 	const hostErrors = data?.hostErrors ?? [];
@@ -178,8 +182,14 @@ export function ContainersDashboard() {
 				case "created":
 					return container.created;
 				case "cpu":
+					if (container.runtime === "pm2") {
+						return container.pm2?.cpu_percent ?? -1;
+					}
 					return getHistoricalValue(container, statsInterval, "cpu") ?? -1;
 				case "ram":
+					if (container.runtime === "pm2") {
+						return container.pm2?.memory_bytes ?? -1;
+					}
 					return getHistoricalValue(container, statsInterval, "memory") ?? -1;
 				default:
 					return container.created;
@@ -521,6 +531,7 @@ export function ContainersDashboard() {
 		<div className="w-full space-y-8">
 			<ContainersSummaryCards
 				totalContainers={containers.length}
+				totalPM2Apps={totalPM2Apps}
 				hostInfo={hostInfo}
 				systemUsage={systemUsage}
 			/>
@@ -539,7 +550,7 @@ export function ContainersDashboard() {
 					aria-atomic="true"
 				>
 					<p className="font-medium text-yellow-800 dark:text-yellow-200">
-						Some Docker hosts are unavailable
+						Some app sources are unavailable
 					</p>
 					<ul className="mt-1 text-yellow-700 dark:text-yellow-300">
 						{hostErrors.map((he) => (

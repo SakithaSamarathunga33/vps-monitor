@@ -15,12 +15,14 @@ interface SystemUsage {
 
 interface ContainersSummaryCardsProps {
   totalContainers: number;
+  totalPM2Apps?: number;
   hostInfo: HostInfo;
   systemUsage: SystemUsage;
 }
 
 export function ContainersSummaryCards({
   totalContainers,
+  totalPM2Apps = 0,
   hostInfo,
   systemUsage,
 }: ContainersSummaryCardsProps) {
@@ -43,10 +45,12 @@ export function ContainersSummaryCards({
       <Card className="border-t-2 border-t-primary py-4">
         <CardContent className="px-6 py-0">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Containers
+            Apps
           </p>
           <p className="mt-1 text-2xl font-bold">{totalContainers}</p>
-          <p className="mt-1 text-xs text-muted-foreground">total</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {totalPM2Apps > 0 ? `${totalPM2Apps} PM2` : "total"}
+          </p>
         </CardContent>
       </Card>
 
