@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { ActivityIcon, BoxIcon, FileTextIcon, HistoryIcon, ImageIcon, NetworkIcon, ServerIcon } from "lucide-react";
+import { ActivityIcon, BoxIcon, CpuIcon, FileTextIcon, HistoryIcon, ImageIcon, NetworkIcon, ServerIcon } from "lucide-react";
 
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 const navLinks = [
   { to: "/", label: "Containers", icon: BoxIcon },
   { to: "/stats", label: "Stats", icon: ActivityIcon },
+  { to: "/processes", label: "Processes", icon: CpuIcon },
   { to: "/images", label: "Images", icon: ImageIcon },
   { to: "/networks", label: "Networks", icon: NetworkIcon },
   { to: "/scan-history", label: "Scan History", icon: HistoryIcon },
