@@ -3,6 +3,7 @@ package system
 import (
 	"context"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -87,7 +88,133 @@ func GetListeningProjects(ctx context.Context, ports []uint32) ([]models.Contain
 	sort.Slice(apps, func(i, j int) bool {
 		return apps[i].Process.Port < apps[j].Process.Port
 	})
+
+	if len(apps) == 0 {
+		hostApps, err := getHostListeningProjects(ctx, ports)
+		if err == nil {
+			return hostApps, nil
+		}
+	}
+
 	return apps, nil
+}
+
+func getHostListeningProjects(ctx context.Context, ports []uint32) ([]models.ContainerInfo, error) {
+	if _, err := exec.LookPath("nsenter"); err != nil {
+		return nil, err
+	}
+
+	output, err := exec.CommandContext(
+		ctx,
+		"nsenter",
+		"-t",
+		"1",
+		"-m",
+		"-u",
+		"-i",
+		"-n",
+		"-p",
+		"--",
+		"sh",
+		"-lc",
+		"ss -H -ltnp 2>/dev/null",
+	).Output()
+	if err != nil {
+		return nil, err
+	}
+
+	listeners := parseSSListeners(string(output), ports)
+	apps := make([]models.ContainerInfo, 0, len(listeners))
+	for _, listener := range listeners {
+		app := projectFromPID(ctx, listener.pid, listener.port)
+		if app.Process != nil && isDockerListenerProcess(app.Process.Name) {
+			continue
+		}
+		apps = append(apps, app)
+	}
+
+	sort.Slice(apps, func(i, j int) bool {
+		return apps[i].Process.Port < apps[j].Process.Port
+	})
+	return apps, nil
+}
+
+type portListener struct {
+	pid  int32
+	port uint32
+}
+
+func parseSSListeners(output string, ports []uint32) []portListener {
+	wanted := make(map[uint32]struct{}, len(ports))
+	for _, port := range ports {
+		wanted[port] = struct{}{}
+	}
+
+	listeners := make([]portListener, 0)
+	seen := map[string]struct{}{}
+	for _, line := range strings.Split(output, "\n") {
+		port, ok := ssLinePort(line)
+		if !ok {
+			continue
+		}
+		if _, ok := wanted[port]; !ok {
+			continue
+		}
+		pid, ok := ssLinePID(line)
+		if !ok || pid <= 0 {
+			continue
+		}
+		key := strconv.Itoa(int(pid)) + ":" + strconv.Itoa(int(port))
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		listeners = append(listeners, portListener{pid: pid, port: port})
+	}
+
+	sort.Slice(listeners, func(i, j int) bool {
+		return listeners[i].port < listeners[j].port
+	})
+	return listeners
+}
+
+func ssLinePort(line string) (uint32, bool) {
+	fields := strings.Fields(line)
+	for _, field := range fields {
+		index := strings.LastIndex(field, ":")
+		if index < 0 || index == len(field)-1 {
+			continue
+		}
+		portText := strings.Trim(field[index+1:], "[]")
+		value, err := strconv.ParseUint(portText, 10, 16)
+		if err == nil && value > 0 {
+			return uint32(value), true
+		}
+	}
+	return 0, false
+}
+
+func ssLinePID(line string) (int32, bool) {
+	for _, part := range strings.Split(line, "pid=") {
+		if part == line {
+			continue
+		}
+		pidText := strings.Builder{}
+		for _, r := range part {
+			if r < '0' || r > '9' {
+				break
+			}
+			pidText.WriteRune(r)
+		}
+		if pidText.Len() == 0 {
+			continue
+		}
+		value, err := strconv.ParseInt(pidText.String(), 10, 32)
+		if err == nil && value > 0 {
+			return int32(value), true
+		}
+	}
+	return 0, false
 }
 
 func isDockerListenerProcess(name string) bool {

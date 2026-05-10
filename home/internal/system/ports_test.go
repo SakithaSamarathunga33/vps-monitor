@@ -34,3 +34,20 @@ func TestIsDockerListenerProcess(t *testing.T) {
 		t.Fatal("did not expect node to be treated as a Docker listener")
 	}
 }
+
+func TestParseSSListeners(t *testing.T) {
+	output := `
+LISTEN 0 511 0.0.0.0:3000 0.0.0.0:* users:(("node",pid=1234,fd=20))
+LISTEN 0 511 [::]:3001 [::]:* users:(("node",pid=1235,fd=20))
+LISTEN 0 511 0.0.0.0:6789 0.0.0.0:* users:(("vps-monitor",pid=2,fd=7))
+`
+
+	got := parseSSListeners(output, []uint32{3000, 3001})
+	want := []portListener{
+		{pid: 1234, port: 3000},
+		{pid: 1235, port: 3001},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("parseSSListeners() = %v, want %v", got, want)
+	}
+}
