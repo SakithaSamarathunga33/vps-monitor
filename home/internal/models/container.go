@@ -14,6 +14,7 @@ type ContainerInfo struct {
 	Host            string            `json:"host"`
 	Runtime         string            `json:"runtime,omitempty"`
 	PM2             *PM2Info          `json:"pm2,omitempty"`
+	Process         *ProcessAppInfo   `json:"process,omitempty"`
 	HistoricalStats *HistoricalStats  `json:"historical_stats,omitempty"`
 }
 
@@ -27,6 +28,16 @@ type PM2Info struct {
 	RestartCount int     `json:"restart_count"`
 	CPUPercent   float64 `json:"cpu_percent"`
 	MemoryBytes  uint64  `json:"memory_bytes"`
+}
+
+type ProcessAppInfo struct {
+	PID       int32  `json:"pid"`
+	PPID      int32  `json:"ppid,omitempty"`
+	Port      uint32 `json:"port"`
+	Name      string `json:"name"`
+	Cmdline   string `json:"cmdline,omitempty"`
+	ExePath   string `json:"exe_path,omitempty"`
+	Directory string `json:"directory,omitempty"`
 }
 
 type HistoricalStats struct {

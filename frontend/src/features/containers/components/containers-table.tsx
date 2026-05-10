@@ -119,6 +119,8 @@ export function ContainersTable({
 	const renderContainerRow = (container: ContainerInfo) => {
 		const state = container.state.toLowerCase();
 		const isPM2 = container.runtime === "pm2";
+		const isProcess = container.runtime === "process";
+		const isDocker = !container.runtime || container.runtime === "docker";
 		const busy = isContainerBusy(container.id);
 		const startPending = isContainerActionPending("start", container.id);
 		const stopPending = isContainerActionPending("stop", container.id);
@@ -130,7 +132,7 @@ export function ContainersTable({
 			statsInterval,
 			"memory",
 		);
-		const runtimeLabel = isPM2 ? "PM2" : "Docker";
+		const runtimeLabel = isPM2 ? "PM2" : isProcess ? "Process" : "Docker";
 		const runtimeDetails =
 			isPM2 && container.pm2
 				? [
@@ -142,7 +144,15 @@ export function ContainersTable({
 					]
 						.filter(Boolean)
 						.join(" - ")
-				: container.image;
+				: isProcess && container.process
+					? [
+							`port ${container.process.port}`,
+							container.process.directory || container.process.name,
+							`PID ${container.process.pid}`,
+						]
+							.filter(Boolean)
+							.join(" - ")
+					: container.image;
 
 		return (
 			<TableRow key={container.id} className="hover:bg-muted/50">
@@ -156,7 +166,9 @@ export function ContainersTable({
 				</TableCell>
 				<TableCell className="h-16 px-4 font-medium">
 					<div className="flex min-w-0 flex-col gap-1">
-						<span className="truncate">{formatContainerName(container.names)}</span>
+						<span className="truncate">
+							{formatContainerName(container.names)}
+						</span>
 						<span className="inline-flex w-fit items-center rounded-md border px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
 							{runtimeLabel}
 						</span>
@@ -173,7 +185,11 @@ export function ContainersTable({
 										navigator.clipboard?.writeText(
 											isPM2
 												? container.pm2?.script_path || container.command
-												: container.image,
+												: isProcess
+													? container.process?.cmdline ||
+														container.process?.directory ||
+														container.command
+													: container.image,
 										);
 									}}
 									title="Click to copy source"
@@ -184,8 +200,14 @@ export function ContainersTable({
 							</TooltipTrigger>
 							<TooltipContent className="max-w-md break-all">
 								{isPM2
-									? container.pm2?.script_path || container.command || runtimeDetails
-									: container.image}
+									? container.pm2?.script_path ||
+										container.command ||
+										runtimeDetails
+									: isProcess
+										? container.process?.cmdline ||
+											container.process?.directory ||
+											runtimeDetails
+										: container.image}
 							</TooltipContent>
 						</Tooltip>
 					</TooltipProvider>
@@ -205,12 +227,14 @@ export function ContainersTable({
 				<TableCell className="h-16 px-4 text-sm text-muted-foreground">
 					{isPM2 && container.pm2
 						? formatBytes(container.pm2.memory_bytes)
-						: formatHistoricalMetric(memoryAverage)}
+						: isProcess
+							? "Live"
+							: formatHistoricalMetric(memoryAverage)}
 				</TableCell>
 				<TableCell className="h-16 px-4">
 					<TooltipProvider>
 						<div className="flex items-center gap-1">
-							{state === "exited" && !isPM2 && (
+							{state === "exited" && isDocker && (
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<span className="inline-block">
@@ -235,7 +259,7 @@ export function ContainersTable({
 									</TooltipContent>
 								</Tooltip>
 							)}
-							{state === "running" && !isPM2 && (
+							{state === "running" && isDocker && (
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<span className="inline-block">
@@ -268,7 +292,7 @@ export function ContainersTable({
 											size="icon"
 											className="h-8 w-8"
 											onClick={() => onRestart(container)}
-											disabled={busy || isReadOnly || isPM2}
+											disabled={busy || isReadOnly || !isDocker}
 											aria-label={`Restart container ${formatContainerName(container.names)}`}
 										>
 											{restartPending ? (
@@ -282,9 +306,11 @@ export function ContainersTable({
 								<TooltipContent>
 									{isPM2
 										? "PM2 actions are not wired yet"
-										: isReadOnly
-											? "Restart (Read-only mode)"
-											: "Restart"}
+										: isProcess
+											? "Process actions are not wired yet"
+											: isReadOnly
+												? "Restart (Read-only mode)"
+												: "Restart"}
 								</TooltipContent>
 							</Tooltip>
 							<Tooltip>
@@ -295,7 +321,7 @@ export function ContainersTable({
 											size="icon"
 											className="h-8 w-8 text-destructive hover:bg-destructive hover:text-white"
 											onClick={() => onDelete(container)}
-											disabled={busy || isReadOnly || isPM2}
+											disabled={busy || isReadOnly || !isDocker}
 											aria-label={`Delete container ${formatContainerName(container.names)}`}
 										>
 											{removePending ? (
@@ -309,9 +335,11 @@ export function ContainersTable({
 								<TooltipContent>
 									{isPM2
 										? "PM2 actions are not wired yet"
-										: isReadOnly
-											? "Delete (Read-only mode)"
-											: "Delete"}
+										: isProcess
+											? "Process actions are not wired yet"
+											: isReadOnly
+												? "Delete (Read-only mode)"
+												: "Delete"}
 								</TooltipContent>
 							</Tooltip>
 							<Tooltip>
@@ -321,14 +349,18 @@ export function ContainersTable({
 										size="icon"
 										className="h-8 w-8"
 										onClick={() => onViewLogs(container)}
-										disabled={busy || isPM2}
+										disabled={busy || !isDocker}
 										aria-label={`View logs for container ${formatContainerName(container.names)}`}
 									>
 										<FileTextIcon className="size-4" />
 									</Button>
 								</TooltipTrigger>
 								<TooltipContent>
-									{isPM2 ? "PM2 logs are not wired yet" : "View Logs"}
+									{isPM2
+										? "PM2 logs are not wired yet"
+										: isProcess
+											? "Process logs are not wired yet"
+											: "View Logs"}
 								</TooltipContent>
 							</Tooltip>
 							<Tooltip>
@@ -357,14 +389,18 @@ export function ContainersTable({
 										size="icon"
 										className="h-8 w-8"
 										onClick={() => onViewStats(container)}
-										disabled={busy || isPM2}
+										disabled={busy || !isDocker}
 										aria-label={`View stats for container ${formatContainerName(container.names)}`}
 									>
 										<ActivityIcon className="size-4" />
 									</Button>
 								</TooltipTrigger>
 								<TooltipContent>
-									{isPM2 ? "PM2 stats are shown in the row" : "View Stats"}
+									{isPM2
+										? "PM2 stats are shown in the row"
+										: isProcess
+											? "Process port is shown in the row"
+											: "View Stats"}
 								</TooltipContent>
 							</Tooltip>
 						</div>
@@ -390,14 +426,30 @@ export function ContainersTable({
 								aria-label="Select all containers on this page"
 							/>
 						</TableHead>
-						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Name</TableHead>
-						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Image</TableHead>
-						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[130px]">State</TableHead>
-						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Uptime</TableHead>
-						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Created</TableHead>
-						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">CPU {statsInterval}</TableHead>
-						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">RAM {statsInterval}</TableHead>
-						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[200px]">Actions</TableHead>
+						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+							Name
+						</TableHead>
+						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+							Image
+						</TableHead>
+						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[130px]">
+							State
+						</TableHead>
+						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+							Uptime
+						</TableHead>
+						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+							Created
+						</TableHead>
+						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+							CPU {statsInterval}
+						</TableHead>
+						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+							RAM {statsInterval}
+						</TableHead>
+						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[200px]">
+							Actions
+						</TableHead>
 					</TableRow>
 				</TableHeader>
 				<TableBody>

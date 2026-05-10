@@ -178,17 +178,23 @@ export function ContainersDashboard() {
 				case "state":
 					return container.state.toLowerCase();
 				case "uptime":
-					return Date.now() - (container.created * 1000);
+					return Date.now() - container.created * 1000;
 				case "created":
 					return container.created;
 				case "cpu":
 					if (container.runtime === "pm2") {
 						return container.pm2?.cpu_percent ?? -1;
 					}
+					if (container.runtime === "process") {
+						return -1;
+					}
 					return getHistoricalValue(container, statsInterval, "cpu") ?? -1;
 				case "ram":
 					if (container.runtime === "pm2") {
 						return container.pm2?.memory_bytes ?? -1;
+					}
+					if (container.runtime === "process") {
+						return -1;
 					}
 					return getHistoricalValue(container, statsInterval, "memory") ?? -1;
 				default:
@@ -272,6 +278,12 @@ export function ContainersDashboard() {
 		actionType: ContainerActionType,
 		container: ContainerInfo,
 	) => {
+		if (container.runtime && container.runtime !== "docker") {
+			toast.info(
+				`${container.runtime.toUpperCase()} actions are not wired yet.`,
+			);
+			return;
+		}
 		setPendingAction({ id: container.id, type: actionType });
 		try {
 			let result: Awaited<ReturnType<typeof startContainer>> | null = null;
@@ -524,7 +536,9 @@ export function ContainersDashboard() {
 
 	const isConfirmActionPending =
 		!!confirmAction &&
-		confirmAction.containers.some((container) => container.id === pendingAction?.id) &&
+		confirmAction.containers.some(
+			(container) => container.id === pendingAction?.id,
+		) &&
 		pendingAction?.type === confirmAction.type;
 
 	return (

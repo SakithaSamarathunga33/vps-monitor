@@ -205,6 +205,30 @@ func (ar *APIRouter) GetContainers(w http.ResponseWriter, r *http.Request) {
 	}
 	allContainers = append(allContainers, pm2Apps...)
 
+	pm2PIDs := make(map[int32]struct{}, len(pm2Apps))
+	for _, app := range pm2Apps {
+		if app.PM2 != nil && app.PM2.PID > 0 {
+			pm2PIDs[int32(app.PM2.PID)] = struct{}{}
+		}
+	}
+
+	portProjects, portErr := system.GetListeningProjects(ctx, system.ProjectPortsFromEnv())
+	if portErr != nil {
+		hostErrorMessages = append(hostErrorMessages, map[string]string{
+			"host":    "ports",
+			"message": portErr.Error(),
+		})
+	} else {
+		for _, project := range portProjects {
+			if project.Process != nil {
+				if _, isPM2 := pm2PIDs[project.Process.PID]; isPM2 {
+					continue
+				}
+			}
+			allContainers = append(allContainers, project)
+		}
+	}
+
 	if len(allContainers) == 0 && dockerClient == nil && errors.Is(err, system.ErrPM2Unavailable) {
 		http.Error(w, "docker client unavailable and pm2 is not available", http.StatusServiceUnavailable)
 		return
