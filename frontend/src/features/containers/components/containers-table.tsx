@@ -164,9 +164,9 @@ export function ContainersTable({
 						aria-label={`Select ${formatContainerName(container.names)}`}
 					/>
 				</TableCell>
-				<TableCell className="h-16 px-4 font-medium">
+				<TableCell className="h-16 px-4 font-medium max-w-0 w-[220px]">
 					<div className="flex min-w-0 flex-col gap-1">
-						<span className="truncate">
+						<span className="truncate" title={formatContainerName(container.names)}>
 							{formatContainerName(container.names)}
 						</span>
 						<span className="inline-flex w-fit items-center rounded-md border px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
@@ -426,7 +426,7 @@ export function ContainersTable({
 								aria-label="Select all containers on this page"
 							/>
 						</TableHead>
-						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[220px] max-w-[220px]">
 							Name
 						</TableHead>
 						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
