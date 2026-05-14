@@ -25,13 +25,14 @@ type HistoricalAverages struct {
 	Samples   []ContainerStats `json:"samples,omitempty"`
 }
 
-// ProcessInfo holds per-process CPU data for the processes endpoint.
+// ProcessInfo holds per-process CPU/memory data for the processes endpoint.
 type ProcessInfo struct {
 	PID                      int32   `json:"pid"`
 	PPID                     int32   `json:"ppid,omitempty"`
 	Name                     string  `json:"name"`
 	ParentName               string  `json:"parent_name,omitempty"`
 	CPUPercent               float64 `json:"cpu_percent"`
+	MemoryBytes              uint64  `json:"memory_bytes"`
 	Suspicious               bool    `json:"suspicious"`
 	SuspiciousReason         string  `json:"suspicious_reason,omitempty"`
 	ProcessType              string  `json:"process_type"`

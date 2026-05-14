@@ -9,6 +9,7 @@ interface MetricCardProps {
   value: string;
   percent: number;
   color: MetricColor;
+  subtitle?: string;
   className?: string;
 }
 
@@ -18,7 +19,7 @@ const colorMap: Record<MetricColor, { border: string; bar: string }> = {
   green:  { border: "border-t-green-500",  bar: "bg-green-500" },
 };
 
-export function MetricCard({ label, value, percent, color, className }: MetricCardProps) {
+export function MetricCard({ label, value, percent, color, subtitle, className }: MetricCardProps) {
   const { border, bar } = colorMap[color];
   return (
     <Card className={cn("border-t-2 py-4", border, className)}>
@@ -27,6 +28,9 @@ export function MetricCard({ label, value, percent, color, className }: MetricCa
           {label}
         </p>
         <p className="mt-1 text-2xl font-bold">{value}</p>
+        {subtitle && (
+          <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>
+        )}
         <Progress
           value={Math.min(percent, 100)}
           className="mt-2 h-1.5"

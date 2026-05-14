@@ -11,6 +11,8 @@ interface SystemUsage {
   cpu: number;
   memory: number;
   disk: number;
+  memoryUsed: number;
+  memoryTotal: number;
 }
 
 interface ContainersSummaryCardsProps {
@@ -20,12 +22,24 @@ interface ContainersSummaryCardsProps {
   systemUsage: SystemUsage;
 }
 
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return "0 B";
+  const gb = bytes / (1024 ** 3);
+  if (gb >= 1) return `${gb.toFixed(gb >= 10 ? 0 : 1)} GB`;
+  const mb = bytes / (1024 ** 2);
+  return `${Math.round(mb)} MB`;
+}
+
 export function ContainersSummaryCards({
   totalContainers,
   totalPM2Apps = 0,
   hostInfo,
   systemUsage,
 }: ContainersSummaryCardsProps) {
+  const memorySubtitle = systemUsage.memoryTotal > 0
+    ? `${formatBytes(systemUsage.memoryUsed)} / ${formatBytes(systemUsage.memoryTotal)}`
+    : undefined;
+
   return (
     <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
       <Card className="border-t-2 border-t-primary py-4">
@@ -66,6 +80,7 @@ export function ContainersSummaryCards({
         value={`${systemUsage.memory}%`}
         percent={systemUsage.memory}
         color="amber"
+        subtitle={memorySubtitle}
       />
     </section>
   );

@@ -46,6 +46,15 @@ function metricColor(percent: number): string {
   return "bg-green-500";
 }
 
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return "0 B";
+  const gb = bytes / (1024 ** 3);
+  if (gb >= 1) return `${gb.toFixed(1)} GB`;
+  const mb = bytes / (1024 ** 2);
+  if (mb >= 1) return `${mb.toFixed(0)} MB`;
+  return `${Math.round(bytes / 1024)} KB`;
+}
+
 function ReasonBadge({ reason }: { reason: string }) {
   const colors: Record<string, string> = {
     "High CPU":
@@ -199,6 +208,9 @@ function SuspiciousRow({ proc }: { proc: ProcessInfo }) {
             {proc.cpu_percent.toFixed(1)}%
           </span>
         </div>
+      </TableCell>
+      <TableCell className="font-mono text-xs text-muted-foreground">
+        {formatBytes(proc.memory_bytes)}
       </TableCell>
       <TableCell>
         <ReasonBadge reason={proc.suspicious_reason ?? "Unknown"} />
@@ -431,6 +443,9 @@ export function ProcessesPage() {
                     CPU %
                   </TableHead>
                   <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    RAM
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Reason
                   </TableHead>
                   <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -491,6 +506,9 @@ export function ProcessesPage() {
                   <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     CPU %
                   </TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    RAM
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -526,6 +544,9 @@ export function ProcessesPage() {
                           {proc.cpu_percent.toFixed(1)}%
                         </span>
                       </div>
+                    </TableCell>
+                    <TableCell className="font-mono text-xs text-muted-foreground">
+                      {formatBytes(proc.memory_bytes)}
                     </TableCell>
                   </TableRow>
                 ))}

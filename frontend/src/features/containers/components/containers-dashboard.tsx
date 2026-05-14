@@ -76,6 +76,8 @@ export function ContainersDashboard() {
 			cpu: Math.round(systemStats?.usage.cpuPercent ?? 0),
 			memory: Math.round(systemStats?.usage.memoryPercent ?? 0),
 			disk: Math.round(systemStats?.usage.diskPercent ?? 0),
+			memoryUsed: systemStats?.usage.memoryUsed ?? 0,
+			memoryTotal: systemStats?.usage.memoryTotal ?? 0,
 		}),
 		[systemStats],
 	);

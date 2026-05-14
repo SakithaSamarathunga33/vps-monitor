@@ -7,6 +7,7 @@ export interface ProcessInfo {
   name: string;
   parent_name?: string;
   cpu_percent: number;
+  memory_bytes: number;
   suspicious: boolean;
   suspicious_reason?: string;
   process_type: string;

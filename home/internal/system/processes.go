@@ -301,6 +301,7 @@ func GetProcesses(ctx context.Context, store *KillOnSightStore) (*models.Process
 		name             string
 		parentName       string
 		cpu              float64
+		memoryBytes      uint64
 		suspicious       bool
 		suspiciousReason string
 		processType      string
@@ -324,6 +325,10 @@ func GetProcesses(ctx context.Context, store *KillOnSightStore) (*models.Process
 			continue
 		}
 		cpu = cpu / numCPU
+		var memBytes uint64
+		if memInfo, err := p.MemoryInfoWithContext(ctx); err == nil && memInfo != nil {
+			memBytes = memInfo.RSS
+		}
 		ppid, parentName, exePath, cmdline, systemdUnit := getProcessSourceDetails(ctx, p)
 
 		// Auto-kill if on the kill-on-sight list.
@@ -341,7 +346,7 @@ func GetProcesses(ctx context.Context, store *KillOnSightStore) (*models.Process
 				Error: KillErrorMessage(killErr),
 			})
 			entries = append(entries, entry{
-				pid: p.Pid, name: name, cpu: cpu,
+				pid: p.Pid, name: name, cpu: cpu, memoryBytes: memBytes,
 				suspicious: true, suspiciousReason: "Kill-on-sight failed",
 				processType: classifyProcess(name), killError: KillErrorMessage(killErr),
 				ppid: ppid, parentName: parentName, exePath: exePath, cmdline: cmdline, systemdUnit: systemdUnit,
@@ -354,7 +359,7 @@ func GetProcesses(ctx context.Context, store *KillOnSightStore) (*models.Process
 		cpuHistory.Store(p.Pid, cpu)
 
 		entries = append(entries, entry{
-			pid: p.Pid, name: name, cpu: cpu,
+			pid: p.Pid, name: name, cpu: cpu, memoryBytes: memBytes,
 			suspicious: suspicious, suspiciousReason: reason,
 			processType: classifyProcess(name),
 			ppid:        ppid, parentName: parentName, exePath: exePath, cmdline: cmdline, systemdUnit: systemdUnit,
@@ -377,6 +382,7 @@ func GetProcesses(ctx context.Context, store *KillOnSightStore) (*models.Process
 			Name:                     e.name,
 			ParentName:               e.parentName,
 			CPUPercent:               e.cpu,
+			MemoryBytes:              e.memoryBytes,
 			Suspicious:               e.suspicious,
 			SuspiciousReason:         e.suspiciousReason,
 			ProcessType:              e.processType,
