@@ -10,7 +10,7 @@ import {
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -68,47 +68,48 @@ export function ContainerStatsCard({
 
   return (
     <Card className="flex flex-col overflow-hidden">
-      <CardHeader className="pb-2">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <CardTitle className="text-base truncate" title={formatContainerName(container.names)}>
-              {formatContainerName(container.names)}
-            </CardTitle>
-            <p className="text-xs text-muted-foreground truncate" title={container.image}>
-              {container.image}
-            </p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <span className={cn(
-              "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
-              isConnected
-                ? "bg-green-500/10 text-green-600 border border-green-500/20 dark:text-green-400"
-                : "bg-muted text-muted-foreground border border-border"
-            )}>
-              <span className="size-1.5 rounded-full bg-current" />
-              {isConnected ? "Live" : "Off"}
-            </span>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={isConnected ? "default" : "outline"}
-                  size="icon-sm"
-                  onClick={handleToggle}
-                >
-                  {isConnected ? (
-                    <SquareIcon className="size-3" />
-                  ) : (
-                    <PlayIcon className="size-3" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {isConnected ? "Stop streaming" : "Start streaming"}
-              </TooltipContent>
-            </Tooltip>
-          </div>
+      <div className="flex items-start justify-between gap-2 overflow-hidden px-6 pt-5 pb-2">
+        <div className="min-w-0 flex-1 overflow-hidden">
+          <p
+            className="truncate text-base font-semibold leading-none"
+            title={formatContainerName(container.names)}
+          >
+            {formatContainerName(container.names)}
+          </p>
+          <p className="mt-1 truncate text-xs text-muted-foreground" title={container.image}>
+            {container.image}
+          </p>
         </div>
-      </CardHeader>
+        <div className="flex shrink-0 items-center gap-2">
+          <span className={cn(
+            "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
+            isConnected
+              ? "bg-green-500/10 text-green-600 border border-green-500/20 dark:text-green-400"
+              : "bg-muted text-muted-foreground border border-border"
+          )}>
+            <span className="size-1.5 rounded-full bg-current" />
+            {isConnected ? "Live" : "Off"}
+          </span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={isConnected ? "default" : "outline"}
+                size="icon-sm"
+                onClick={handleToggle}
+              >
+                {isConnected ? (
+                  <SquareIcon className="size-3" />
+                ) : (
+                  <PlayIcon className="size-3" />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {isConnected ? "Stop streaming" : "Start streaming"}
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      </div>
       <CardContent className="flex-1 pt-0">
         {error && (
           <p className="text-xs text-destructive mb-2">{error}</p>
