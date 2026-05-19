@@ -228,15 +228,9 @@ export function ContainersLogsSheet({
     setLogs([]);
 
     if (container && isOpen) {
-      fetchLogs();
+      void startStreaming();
     }
-  }, [container, isOpen, fetchLogs, stopStreaming]);
-
-  useEffect(() => {
-    if (container && isOpen && !isStreaming) {
-      fetchLogs();
-    }
-  }, [container, isOpen, isStreaming, fetchLogs]);
+  }, [container, isOpen, startStreaming, stopStreaming]);
 
   const handleLogLinesChange = (value: string) => {
     const num = parseInt(value, 10);

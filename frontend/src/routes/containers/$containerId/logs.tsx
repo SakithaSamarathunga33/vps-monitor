@@ -249,17 +249,11 @@ function ContainerLogsPage() {
   };
 
   useEffect(() => {
-    fetchLogs();
+    void startStreaming();
     return () => {
       stopStreaming();
     };
-  }, [fetchLogs, stopStreaming]);
-
-  useEffect(() => {
-    if (!isStreaming) {
-      fetchLogs();
-    }
-  }, [isStreaming, fetchLogs]);
+  }, [startStreaming, stopStreaming]);
 
   const handleLogLinesChange = (value: string) => {
     const num = parseInt(value, 10);

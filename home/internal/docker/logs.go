@@ -13,15 +13,22 @@ import (
 )
 
 // parseDockerLogs parses the Docker log stream into structured entries
-func parseDockerLogs(reader io.Reader) ([]models.LogEntry, error) {
+func parseDockerLogs(reader io.Reader, multiplexed bool) ([]models.LogEntry, error) {
 	var entries []models.LogEntry
 
 	stdout := &logWriter{stream: "stdout", entries: &entries}
 	stderr := &logWriter{stream: "stderr", entries: &entries}
 
-	_, err := stdcopy.StdCopy(stdout, stderr, reader)
-	if err != nil && err != io.EOF {
-		return nil, err
+	if multiplexed {
+		_, err := stdcopy.StdCopy(stdout, stderr, reader)
+		if err != nil && err != io.EOF {
+			return nil, err
+		}
+	} else {
+		_, err := io.Copy(stdout, reader)
+		if err != nil && err != io.EOF {
+			return nil, err
+		}
 	}
 
 	stdout.Flush()
@@ -154,6 +161,17 @@ func buildLogsOptions(options models.LogOptions, follow, timestamps bool) contai
 	}
 }
 
+func (c *MultiHostClient) containerLogsAreMultiplexed(ctx context.Context, apiClient interface {
+	ContainerInspect(context.Context, string) (container.InspectResponse, error)
+}, id string) (bool, error) {
+	inspect, err := apiClient.ContainerInspect(ctx, id)
+	if err != nil {
+		return false, err
+	}
+
+	return !inspect.Config.Tty, nil
+}
+
 // multi host client methods
 func (c *MultiHostClient) GetContainerLogsParsed(hostName, id string, options models.LogOptions) ([]models.LogEntry, error) {
 	apiClient, err := c.GetClient(hostName)
@@ -161,13 +179,19 @@ func (c *MultiHostClient) GetContainerLogsParsed(hostName, id string, options mo
 		return nil, err
 	}
 
-	logs, err := apiClient.ContainerLogs(context.Background(), id, buildLogsOptions(options, false, true))
+	ctx := context.Background()
+	multiplexed, err := c.containerLogsAreMultiplexed(ctx, apiClient, id)
+	if err != nil {
+		return nil, err
+	}
+
+	logs, err := apiClient.ContainerLogs(ctx, id, buildLogsOptions(options, false, true))
 	if err != nil {
 		return nil, err
 	}
 	defer logs.Close()
 
-	return parseDockerLogs(logs)
+	return parseDockerLogs(logs, multiplexed)
 }
 
 func (c *MultiHostClient) StreamContainerLogsParsed(hostName, id string, options models.LogOptions) (io.ReadCloser, error) {
@@ -176,7 +200,13 @@ func (c *MultiHostClient) StreamContainerLogsParsed(hostName, id string, options
 		return nil, err
 	}
 
-	logs, err := apiClient.ContainerLogs(context.Background(), id, buildLogsOptions(options, options.Follow, true))
+	ctx := context.Background()
+	multiplexed, err := c.containerLogsAreMultiplexed(ctx, apiClient, id)
+	if err != nil {
+		return nil, err
+	}
+
+	logs, err := apiClient.ContainerLogs(ctx, id, buildLogsOptions(options, options.Follow, true))
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +233,11 @@ func (c *MultiHostClient) StreamContainerLogsParsed(hostName, id string, options
 			pipeWriter: pipeWriter,
 		}
 
-		_, err = stdcopy.StdCopy(stdout, stderr, logs)
+		if multiplexed {
+			_, err = stdcopy.StdCopy(stdout, stderr, logs)
+		} else {
+			_, err = io.Copy(stdout, logs)
+		}
 		stdout.Flush()
 		stderr.Flush()
 
