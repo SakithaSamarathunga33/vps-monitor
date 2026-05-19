@@ -2,46 +2,52 @@ import type { StateCounts } from "./container-utils";
 
 interface ContainersStateSummaryProps {
   stateCounts: StateCounts;
+  total: number;
 }
 
 export function ContainersStateSummary({
   stateCounts,
+  total,
 }: ContainersStateSummaryProps) {
   return (
-    <div className="flex flex-wrap items-center gap-3 text-sm">
+    <div className="helm-state-tabs">
+      <div className="helm-state-tab">
+        <span>All</span>
+        <strong>{total}</strong>
+      </div>
       {stateCounts.running > 0 && (
-        <div className="flex items-center gap-2 rounded-md border bg-card px-3 py-2">
+        <div className="helm-state-tab is-active">
           <div className="size-2 rounded-full bg-emerald-500" />
-          <span className="text-muted-foreground">Running</span>
-          <span className="font-semibold">{stateCounts.running}</span>
+          <span>Running</span>
+          <strong>{stateCounts.running}</strong>
         </div>
       )}
       {stateCounts.exited > 0 && (
-        <div className="flex items-center gap-2 rounded-md border bg-card px-3 py-2">
+        <div className="helm-state-tab">
           <div className="size-2 rounded-full bg-muted" />
-          <span className="text-muted-foreground">Exited</span>
-          <span className="font-semibold">{stateCounts.exited}</span>
+          <span>Exited</span>
+          <strong>{stateCounts.exited}</strong>
         </div>
       )}
       {stateCounts.paused > 0 && (
-        <div className="flex items-center gap-2 rounded-md border bg-card px-3 py-2">
+        <div className="helm-state-tab">
           <div className="size-2 rounded-full bg-amber-500" />
-          <span className="text-muted-foreground">Paused</span>
-          <span className="font-semibold">{stateCounts.paused}</span>
+          <span>Paused</span>
+          <strong>{stateCounts.paused}</strong>
         </div>
       )}
       {stateCounts.restarting > 0 && (
-        <div className="flex items-center gap-2 rounded-md border bg-card px-3 py-2">
+        <div className="helm-state-tab">
           <div className="size-2 rounded-full bg-blue-500" />
-          <span className="text-muted-foreground">Restarting</span>
-          <span className="font-semibold">{stateCounts.restarting}</span>
+          <span>Restarting</span>
+          <strong>{stateCounts.restarting}</strong>
         </div>
       )}
       {stateCounts.dead > 0 && (
-        <div className="flex items-center gap-2 rounded-md border bg-card px-3 py-2">
+        <div className="helm-state-tab">
           <div className="size-2 rounded-full bg-rose-500" />
-          <span className="text-muted-foreground">Dead</span>
-          <span className="font-semibold">{stateCounts.dead}</span>
+          <span>Dead</span>
+          <strong>{stateCounts.dead}</strong>
         </div>
       )}
     </div>

@@ -116,6 +116,22 @@ export function ContainersTable({
 		return `${value.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
 	};
 
+	const formatPorts = (container: ContainerInfo) => {
+		if (container.runtime === "process" && container.process?.port) {
+			return `${container.process.port}/tcp`;
+		}
+		if (!container.ports?.length) {
+			return "-";
+		}
+		return container.ports
+			.slice(0, 3)
+			.map((port) => {
+				const base = `${port.private_port}/${port.type || "tcp"}`;
+				return port.public_port ? `${port.public_port}:${base}` : base;
+			})
+			.join(", ");
+	};
+
 	const renderContainerRow = (container: ContainerInfo) => {
 		const state = container.state.toLowerCase();
 		const isPM2 = container.runtime === "pm2";
@@ -155,8 +171,8 @@ export function ContainersTable({
 					: container.image;
 
 		return (
-			<TableRow key={container.id} className="hover:bg-muted/50">
-				<TableCell className="w-10 px-4">
+			<TableRow key={container.id}>
+				<TableCell className="w-10 px-3">
 					<input
 						type="checkbox"
 						checked={selectedIds.includes(container.id)}
@@ -164,17 +180,20 @@ export function ContainersTable({
 						aria-label={`Select ${formatContainerName(container.names)}`}
 					/>
 				</TableCell>
-				<TableCell className="h-16 px-4 font-medium max-w-0 w-[220px]">
+				<TableCell className="h-14 px-3 font-medium max-w-0 w-[230px]">
 					<div className="flex min-w-0 flex-col gap-1">
 						<span className="truncate" title={formatContainerName(container.names)}>
 							{formatContainerName(container.names)}
 						</span>
-						<span className="inline-flex w-fit items-center rounded-md border px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
-							{runtimeLabel}
-						</span>
+						<div className="flex min-w-0 items-center gap-1.5">
+							<span className="helm-mini-badge">{runtimeLabel}</span>
+							<span className="truncate font-mono text-[10px] text-muted-foreground">
+								{container.id.slice(0, 6)}
+							</span>
+						</div>
 					</div>
 				</TableCell>
-				<TableCell className="h-16 px-4 text-sm text-muted-foreground">
+				<TableCell className="h-14 px-3 text-sm text-muted-foreground">
 					<TooltipProvider>
 						<Tooltip>
 							<TooltipTrigger asChild>
@@ -212,28 +231,31 @@ export function ContainersTable({
 						</Tooltip>
 					</TooltipProvider>
 				</TableCell>
-				<TableCell className="h-16 px-4">
+				<TableCell className="h-14 px-3">
 					<StatusBadge status={container.state} />
 				</TableCell>
-				<TableCell className="h-16 px-4 text-sm text-muted-foreground">
+				<TableCell className="h-14 px-3 text-sm text-muted-foreground">
 					{formatUptime(container.created)}
 				</TableCell>
-				<TableCell className="h-16 px-4 text-sm text-muted-foreground">
+				<TableCell className="h-14 px-3 font-mono text-xs text-muted-foreground">
+					{formatPorts(container)}
+				</TableCell>
+				<TableCell className="h-14 px-3 text-sm text-muted-foreground">
 					{formatCreatedDate(container.created)}
 				</TableCell>
-				<TableCell className="h-16 px-4 text-sm text-muted-foreground">
+				<TableCell className="h-14 px-3 text-sm text-muted-foreground">
 					{formatHistoricalMetric(cpuAverage)}
 				</TableCell>
-				<TableCell className="h-16 px-4 text-sm text-muted-foreground">
+				<TableCell className="h-14 px-3 text-sm text-muted-foreground">
 					{isPM2 && container.pm2
 						? formatBytes(container.pm2.memory_bytes)
 						: isProcess
 							? "Live"
 							: formatHistoricalMetric(memoryAverage)}
 				</TableCell>
-				<TableCell className="h-16 px-4">
+				<TableCell className="h-14 px-3">
 					<TooltipProvider>
-						<div className="flex items-center gap-1">
+						<div className="flex items-center justify-end gap-1">
 							{state === "exited" && isDocker && (
 								<Tooltip>
 									<TooltipTrigger asChild>
@@ -241,7 +263,7 @@ export function ContainersTable({
 											<Button
 												variant="outline"
 												size="icon"
-												className="h-8 w-8"
+												className="helm-row-action"
 												onClick={() => onStart(container)}
 												disabled={busy || isReadOnly}
 												aria-label={`Start container ${formatContainerName(container.names)}`}
@@ -266,7 +288,7 @@ export function ContainersTable({
 											<Button
 												variant="outline"
 												size="icon"
-												className="h-8 w-8"
+												className="helm-row-action"
 												onClick={() => onStop(container)}
 												disabled={busy || isReadOnly}
 												aria-label={`Stop container ${formatContainerName(container.names)}`}
@@ -290,7 +312,7 @@ export function ContainersTable({
 										<Button
 											variant="outline"
 											size="icon"
-											className="h-8 w-8"
+											className="helm-row-action"
 											onClick={() => onRestart(container)}
 											disabled={busy || isReadOnly || !isDocker}
 											aria-label={`Restart container ${formatContainerName(container.names)}`}
@@ -319,7 +341,7 @@ export function ContainersTable({
 										<Button
 											variant="outline"
 											size="icon"
-											className="h-8 w-8 text-destructive hover:bg-destructive hover:text-white"
+											className="helm-row-action text-destructive"
 											onClick={() => onDelete(container)}
 											disabled={busy || isReadOnly || !isDocker}
 											aria-label={`Delete container ${formatContainerName(container.names)}`}
@@ -347,7 +369,7 @@ export function ContainersTable({
 									<Button
 										variant="outline"
 										size="icon"
-										className="h-8 w-8"
+										className="helm-row-action"
 										onClick={() => onViewLogs(container)}
 										disabled={busy || !isDocker}
 										aria-label={`View logs for container ${formatContainerName(container.names)}`}
@@ -368,7 +390,7 @@ export function ContainersTable({
 									<Button
 										variant="outline"
 										size="icon"
-										className="h-8 w-8"
+										className="helm-row-action"
 										onClick={() => {
 											navigator.clipboard?.writeText(container.command);
 										}}
@@ -387,7 +409,7 @@ export function ContainersTable({
 									<Button
 										variant="outline"
 										size="icon"
-										className="h-8 w-8"
+										className="helm-row-action"
 										onClick={() => onViewStats(container)}
 										disabled={busy || !isDocker}
 										aria-label={`View stats for container ${formatContainerName(container.names)}`}
@@ -411,11 +433,11 @@ export function ContainersTable({
 	};
 
 	return (
-		<div className="overflow-x-auto rounded-lg border bg-card">
-			<Table className="min-w-[980px]">
+		<div className="helm-table-wrap">
+			<Table className="min-w-[1120px]">
 				<TableHeader>
 					<TableRow className="hover:bg-transparent border-b">
-						<TableHead className="h-12 w-10 px-4">
+						<TableHead className="h-10 w-10 px-3">
 							<input
 								type="checkbox"
 								checked={
@@ -426,28 +448,31 @@ export function ContainersTable({
 								aria-label="Select all containers on this page"
 							/>
 						</TableHead>
-						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[220px] max-w-[220px]">
+						<TableHead className="h-10 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[230px] max-w-[230px]">
 							Name
 						</TableHead>
-						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+						<TableHead className="h-10 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
 							Image
 						</TableHead>
-						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[130px]">
+						<TableHead className="h-10 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[120px]">
 							State
 						</TableHead>
-						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+						<TableHead className="h-10 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
 							Uptime
 						</TableHead>
-						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+						<TableHead className="h-10 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+							Ports
+						</TableHead>
+						<TableHead className="h-10 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
 							Created
 						</TableHead>
-						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+						<TableHead className="h-10 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
 							CPU {statsInterval}
 						</TableHead>
-						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+						<TableHead className="h-10 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
 							RAM {statsInterval}
 						</TableHead>
-						<TableHead className="h-12 px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[200px]">
+						<TableHead className="h-10 px-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground w-[190px]">
 							Actions
 						</TableHead>
 					</TableRow>
@@ -455,7 +480,7 @@ export function ContainersTable({
 				<TableBody>
 					{isLoading ? (
 						<TableRow>
-							<TableCell colSpan={9} className="h-32">
+							<TableCell colSpan={10} className="h-32">
 								<div className="flex items-center justify-center text-sm text-muted-foreground">
 									<Spinner className="mr-2" />
 									Loading containers…
@@ -464,7 +489,7 @@ export function ContainersTable({
 						</TableRow>
 					) : isError ? (
 						<TableRow>
-							<TableCell colSpan={9} className="h-32">
+							<TableCell colSpan={10} className="h-32">
 								<div className="flex flex-col items-center gap-3 text-center">
 									<p className="text-sm text-muted-foreground">
 										{(error as Error)?.message || "Unable to load containers."}
@@ -477,7 +502,7 @@ export function ContainersTable({
 						</TableRow>
 					) : filteredContainers.length === 0 ? (
 						<TableRow>
-							<TableCell colSpan={9} className="h-32">
+							<TableCell colSpan={10} className="h-32">
 								<div className="text-center text-sm text-muted-foreground">
 									No containers found.
 								</div>
@@ -488,7 +513,7 @@ export function ContainersTable({
 							<Fragment key={group.project}>
 								<TableRow className="bg-muted/30 hover:bg-muted/30">
 									<TableCell
-										colSpan={9}
+										colSpan={10}
 										className="h-10 px-4 text-xs font-medium text-muted-foreground"
 									>
 										<button

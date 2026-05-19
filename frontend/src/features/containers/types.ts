@@ -9,6 +9,12 @@ export interface ContainerInfo {
 	image: string;
 	image_id: string;
 	command: string;
+	ports?: Array<{
+		ip?: string;
+		private_port: number;
+		public_port?: number;
+		type: string;
+	}>;
 	created: number;
 	state: string;
 	status: string;

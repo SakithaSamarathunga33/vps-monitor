@@ -9,6 +9,8 @@ export interface SystemStats {
     kernelVersion: string;
     arch: string;
     uptime: number;
+    cpuLogical?: number;
+    cpuPhysical?: number;
   };
   usage: {
     cpuPercent: number;
@@ -18,6 +20,15 @@ export interface SystemStats {
     diskPercent: number;
     diskTotal: number;
     diskUsed: number;
+  };
+  load?: {
+    load1: number;
+    load5: number;
+    load15: number;
+  };
+  network?: {
+    rxBytes: number;
+    txBytes: number;
   };
 }
 

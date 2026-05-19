@@ -74,7 +74,7 @@ export function DiskSpaceMonitor({
   };
 
   return (
-    <Card>
+    <Card className="helm-disk-card">
       <CardHeader className="pb-3">
         <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
           <div className="flex min-w-0 items-center gap-2">

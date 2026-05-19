@@ -310,6 +310,7 @@ func (ar *APIRouter) GetContainer(w http.ResponseWriter, r *http.Request) {
 			"names":    names,
 			"image":    image,
 			"image_id": inspect.Image,
+			"ports":    inspect.NetworkSettings.Ports,
 			"state":    state,
 			"status":   status,
 			"host":     host,

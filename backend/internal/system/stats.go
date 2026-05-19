@@ -9,12 +9,16 @@ import (
 	"github.com/shirou/gopsutil/v4/cpu"
 	"github.com/shirou/gopsutil/v4/disk"
 	"github.com/shirou/gopsutil/v4/host"
+	"github.com/shirou/gopsutil/v4/load"
 	"github.com/shirou/gopsutil/v4/mem"
+	gonet "github.com/shirou/gopsutil/v4/net"
 )
 
 type SystemStats struct {
 	HostInfo HostInfo `json:"hostInfo"`
 	Usage    Usage    `json:"usage"`
+	Load     LoadInfo `json:"load"`
+	Network  NetInfo  `json:"network"`
 }
 
 type HostInfo struct {
@@ -38,6 +42,17 @@ type Usage struct {
 	DiskUsed      uint64  `json:"diskUsed"`
 }
 
+type LoadInfo struct {
+	Load1  float64 `json:"load1"`
+	Load5  float64 `json:"load5"`
+	Load15 float64 `json:"load15"`
+}
+
+type NetInfo struct {
+	RxBytes uint64 `json:"rxBytes"`
+	TxBytes uint64 `json:"txBytes"`
+}
+
 var (
 	cachedCPUMutex    sync.Mutex
 	cachedCPULogical  int
@@ -52,7 +67,6 @@ func Init() {
 		os.Setenv("HOST_PROC", "/host/proc")
 	}
 }
-
 
 func GetStats(ctx context.Context) (*SystemStats, error) {
 	hInfo, err := host.InfoWithContext(ctx)
@@ -87,7 +101,7 @@ func GetStats(ctx context.Context) (*SystemStats, error) {
 	if needsFetch {
 		logical, err := cpu.CountsWithContext(ctx, true)
 		physical, errPhys := cpu.CountsWithContext(ctx, false)
-		
+
 		cachedCPUMutex.Lock()
 		if cachedCPULogical == 0 && err == nil && errPhys == nil && logical > 0 {
 			cachedCPULogical = logical
@@ -117,6 +131,23 @@ func GetStats(ctx context.Context) (*SystemStats, error) {
 		diskUsed = diskUsage.Used
 	}
 
+	var loadInfo LoadInfo
+	if avg, err := load.AvgWithContext(ctx); err == nil {
+		loadInfo = LoadInfo{
+			Load1:  avg.Load1,
+			Load5:  avg.Load5,
+			Load15: avg.Load15,
+		}
+	}
+
+	var netInfo NetInfo
+	if counters, err := gonet.IOCountersWithContext(ctx, false); err == nil && len(counters) > 0 {
+		netInfo = NetInfo{
+			RxBytes: counters[0].BytesRecv,
+			TxBytes: counters[0].BytesSent,
+		}
+	}
+
 	return &SystemStats{
 		HostInfo: HostInfo{
 			Hostname:        hInfo.Hostname,
@@ -137,5 +168,7 @@ func GetStats(ctx context.Context) (*SystemStats, error) {
 			DiskTotal:     diskTotal,
 			DiskUsed:      diskUsed,
 		},
+		Load:    loadInfo,
+		Network: netInfo,
 	}, nil
 }

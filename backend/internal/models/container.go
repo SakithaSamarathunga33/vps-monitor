@@ -7,6 +7,7 @@ type ContainerInfo struct {
 	Image           string            `json:"image"`
 	ImageID         string            `json:"image_id"`
 	Command         string            `json:"command"`
+	Ports           []PortInfo        `json:"ports,omitempty"`
 	Created         int64             `json:"created"`
 	State           string            `json:"state"`
 	Status          string            `json:"status"`
@@ -16,6 +17,13 @@ type ContainerInfo struct {
 	PM2             *PM2Info          `json:"pm2,omitempty"`
 	Process         *ProcessAppInfo   `json:"process,omitempty"`
 	HistoricalStats *HistoricalStats  `json:"historical_stats,omitempty"`
+}
+
+type PortInfo struct {
+	IP          string `json:"ip,omitempty"`
+	PrivatePort uint16 `json:"private_port"`
+	PublicPort  uint16 `json:"public_port,omitempty"`
+	Type        string `json:"type"`
 }
 
 type PM2Info struct {

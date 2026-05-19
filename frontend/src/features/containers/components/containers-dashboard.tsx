@@ -2,6 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { DateRange } from "react-day-picker";
 import { toast } from "sonner";
+import { FilterIcon, PlusIcon, RefreshCcwIcon } from "lucide-react";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -54,6 +55,19 @@ export function ContainersDashboard() {
 	const { data: systemStats } = useSystemStats();
 
 	const containers = data?.containers ?? [];
+	const runningCount = useMemo(
+		() =>
+			containers.filter((container) => container.state.toLowerCase() === "running")
+				.length,
+		[containers],
+	);
+	const stoppedCount = useMemo(
+		() =>
+			containers.filter((container) =>
+				["exited", "stopped", "dead"].includes(container.state.toLowerCase()),
+			).length,
+		[containers],
+	);
 	const totalPM2Apps = useMemo(
 		() => containers.filter((container) => container.runtime === "pm2").length,
 		[containers],
@@ -78,6 +92,9 @@ export function ContainersDashboard() {
 			disk: Math.round(systemStats?.usage.diskPercent ?? 0),
 			memoryUsed: systemStats?.usage.memoryUsed ?? 0,
 			memoryTotal: systemStats?.usage.memoryTotal ?? 0,
+			cpuLogical: systemStats?.hostInfo.cpuLogical ?? 0,
+			load: systemStats?.load,
+			network: systemStats?.network,
 		}),
 		[systemStats],
 	);
@@ -544,12 +561,46 @@ export function ContainersDashboard() {
 		pendingAction?.type === confirmAction.type;
 
 	return (
-		<div className="w-full space-y-8">
+		<div className="helm-dashboard w-full space-y-6">
+			<header className="helm-page-head">
+				<div className="min-w-0">
+					<h1>Containers</h1>
+					<p>
+						{containers.length} containers · {runningCount} running ·{" "}
+						{stoppedCount} stopped · live host telemetry
+					</p>
+				</div>
+				<div className="helm-page-actions">
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						onClick={() => void refetch()}
+						disabled={isFetching}
+					>
+						<RefreshCcwIcon
+							className={`size-4 ${isFetching ? "animate-spin" : ""}`}
+						/>
+						Refresh
+					</Button>
+					<Button type="button" variant="outline" size="sm">
+						<FilterIcon className="size-4" />
+						Filters
+					</Button>
+					<Button type="button" size="sm" disabled={isReadOnly}>
+						<PlusIcon className="size-4" />
+						New container
+					</Button>
+				</div>
+			</header>
+
 			<ContainersSummaryCards
 				totalContainers={containers.length}
 				totalPM2Apps={totalPM2Apps}
 				hostInfo={hostInfo}
 				systemUsage={systemUsage}
+				runningCount={runningCount}
+				stoppedCount={stoppedCount}
 			/>
 
 			<DiskSpaceMonitor
@@ -579,6 +630,8 @@ export function ContainersDashboard() {
 			)}
 
 			<section className="space-y-4">
+				<ContainersStateSummary stateCounts={stateCounts} total={containers.length} />
+
 				<ContainersToolbar
 					searchTerm={searchTerm}
 					onSearchChange={handleSearchChange}
@@ -602,8 +655,6 @@ export function ContainersDashboard() {
 					onRefresh={refetch}
 					isFetching={isFetching}
 				/>
-
-				<ContainersStateSummary stateCounts={stateCounts} />
 
 				{selectedContainerIds.length > 0 && (
 					<div className="flex items-center justify-between rounded-lg border bg-muted/40 p-4">

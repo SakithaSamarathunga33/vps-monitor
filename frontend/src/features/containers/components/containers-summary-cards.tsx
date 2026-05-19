@@ -1,5 +1,6 @@
-import { MetricCard } from "@/components/metric-card";
+import { CpuIcon, Globe2Icon, HardDriveIcon, MemoryStickIcon, ServerIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 
 interface HostInfo {
   hostname: string;
@@ -13,6 +14,16 @@ interface SystemUsage {
   disk: number;
   memoryUsed: number;
   memoryTotal: number;
+  cpuLogical: number;
+  load?: {
+    load1: number;
+    load5: number;
+    load15: number;
+  };
+  network?: {
+    rxBytes: number;
+    txBytes: number;
+  };
 }
 
 interface ContainersSummaryCardsProps {
@@ -20,6 +31,8 @@ interface ContainersSummaryCardsProps {
   totalPM2Apps?: number;
   hostInfo: HostInfo;
   systemUsage: SystemUsage;
+  runningCount: number;
+  stoppedCount: number;
 }
 
 function formatBytes(bytes: number): string {
@@ -35,6 +48,8 @@ export function ContainersSummaryCards({
   totalPM2Apps = 0,
   hostInfo,
   systemUsage,
+  runningCount,
+  stoppedCount,
 }: ContainersSummaryCardsProps) {
   const memorySubtitle =
     systemUsage.memoryTotal > 0
@@ -42,60 +57,107 @@ export function ContainersSummaryCards({
       : undefined;
 
   return (
-    <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-      <Card className="min-h-[132px] border-t-2 border-t-primary py-4">
-        <CardContent className="flex h-full flex-col px-6 py-0">
-          <p className="truncate text-xs font-semibold uppercase text-muted-foreground">
+    <section className="helm-metrics-grid">
+      <Card className="helm-metric-card">
+        <CardContent>
+          <p className="helm-metric-label">
+            <Globe2Icon className="size-3.5" />
             Host
           </p>
-          <p
-            className="mt-1 min-w-0 truncate text-[clamp(1.1rem,1.8vw,1.45rem)] font-bold leading-tight"
-            title={hostInfo.hostname}
-          >
+          <p className="helm-metric-value is-host" title={hostInfo.hostname}>
             {hostInfo.hostname}
           </p>
-          <p
-            className="mt-auto min-w-0 truncate pt-2 text-xs text-muted-foreground"
-            title={`${hostInfo.os} - ${hostInfo.kernel}`}
-          >
-            {hostInfo.os} - {hostInfo.kernel}
-          </p>
+          <div className="helm-chip-row">
+            <span>{hostInfo.os}</span>
+            <span>kernel {hostInfo.kernel}</span>
+          </div>
         </CardContent>
       </Card>
 
-      <Card className="min-h-[132px] border-t-2 border-t-primary py-4">
-        <CardContent className="flex h-full flex-col px-6 py-0">
-          <p className="truncate text-xs font-semibold uppercase text-muted-foreground">
+      <Card className="helm-metric-card">
+        <CardContent>
+          <p className="helm-metric-label">
+            <ServerIcon className="size-3.5" />
             Apps
           </p>
-          <div className="mt-1 flex min-w-0 items-baseline gap-2">
-            <span className="text-[clamp(1.35rem,2.2vw,1.75rem)] font-bold leading-tight">
+          <div className="helm-metric-value">
+            <span>
               {totalContainers}
             </span>
-            <span className="truncate text-xs text-muted-foreground">
+            <span className="helm-metric-unit">
               containers
             </span>
           </div>
-          <p className="mt-auto min-w-0 truncate pt-2 text-xs text-muted-foreground">
-            {totalPM2Apps > 0 ? `${totalPM2Apps} PM2 apps` : "Docker apps total"}
-          </p>
+          <div className="helm-chip-row">
+            <span className="is-success">{runningCount} running</span>
+            <span>{stoppedCount} stopped</span>
+            {totalPM2Apps > 0 ? <span>{totalPM2Apps} PM2</span> : null}
+          </div>
         </CardContent>
       </Card>
 
-      <MetricCard
-        label="CPU"
-        value={`${systemUsage.cpu}%`}
-        percent={systemUsage.cpu}
-        color="indigo"
-      />
+      <Card className="helm-metric-card">
+        <CardContent>
+          <p className="helm-metric-label">
+            <CpuIcon className="size-3.5" />
+            CPU
+          </p>
+          <div className="helm-metric-value">
+            <span>{systemUsage.cpu}</span>
+            <span className="helm-metric-unit">%</span>
+          </div>
+          <p className="helm-metric-subtitle">
+            {systemUsage.cpuLogical || 0} cores · avg {Math.round(systemUsage.cpu)}%
+          </p>
+          <Progress value={systemUsage.cpu} className="helm-mini-progress" />
+        </CardContent>
+      </Card>
 
-      <MetricCard
-        label="Memory"
-        value={`${systemUsage.memory}%`}
-        percent={systemUsage.memory}
-        color="amber"
-        subtitle={memorySubtitle}
-      />
+      <Card className="helm-metric-card">
+        <CardContent>
+          <p className="helm-metric-label">
+            <MemoryStickIcon className="size-3.5" />
+            Memory
+          </p>
+          <div className="helm-metric-value">
+            <span>{systemUsage.memory}</span>
+            <span className="helm-metric-unit">%</span>
+          </div>
+          <p className="helm-metric-subtitle">{memorySubtitle}</p>
+          <Progress value={systemUsage.memory} className="helm-mini-progress is-amber" />
+        </CardContent>
+      </Card>
+
+      <Card className="helm-wide-card md:col-span-2">
+        <CardContent>
+          <p className="helm-metric-label">
+            <HardDriveIcon className="size-3.5" />
+            Network · Load
+          </p>
+          <div className="helm-system-strip">
+            <div>
+              <span className="helm-strip-value">
+                ↓ {formatBytes(systemUsage.network?.rxBytes ?? 0)}
+              </span>
+              <span>received</span>
+            </div>
+            <div>
+              <span className="helm-strip-value">
+                ↑ {formatBytes(systemUsage.network?.txBytes ?? 0)}
+              </span>
+              <span>sent</span>
+            </div>
+            <div>
+              <span className="helm-strip-value">
+                {(systemUsage.load?.load1 ?? 0).toFixed(2)}{" "}
+                <span>{(systemUsage.load?.load5 ?? 0).toFixed(2)}</span>{" "}
+                <span>{(systemUsage.load?.load15 ?? 0).toFixed(2)}</span>
+              </span>
+              <span>1m 5m 15m load</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </section>
   );
 }

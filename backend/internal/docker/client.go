@@ -136,6 +136,7 @@ func (c *MultiHostClient) queryHost(ctx context.Context, hostName string, apiCli
 			Image:   ctr.Image,
 			ImageID: ctr.ImageID,
 			Command: ctr.Command,
+			Ports:   mapContainerPorts(ctr.Ports),
 			Created: ctr.Created,
 			State:   ctr.State,
 			Status:  ctr.Status,
@@ -145,6 +146,23 @@ func (c *MultiHostClient) queryHost(ctx context.Context, hostName string, apiCli
 	}
 
 	resultCh <- hostResult{hostName: hostName, containers: hostContainers}
+}
+
+func mapContainerPorts(ports []container.Port) []models.PortInfo {
+	if len(ports) == 0 {
+		return nil
+	}
+
+	result := make([]models.PortInfo, 0, len(ports))
+	for _, port := range ports {
+		result = append(result, models.PortInfo{
+			IP:          port.IP,
+			PrivatePort: port.PrivatePort,
+			PublicPort:  port.PublicPort,
+			Type:        port.Type,
+		})
+	}
+	return result
 }
 
 func (c *MultiHostClient) GetClient(hostName string) (*client.Client, error) {

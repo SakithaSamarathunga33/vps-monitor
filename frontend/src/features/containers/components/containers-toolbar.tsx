@@ -130,19 +130,19 @@ export function ContainersToolbar({
 	};
 
 	return (
-		<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+		<div className="helm-table-toolbar">
 			<Input
 				type="search"
 				value={searchTerm}
 				onChange={(event) => onSearchChange(event.target.value)}
-				placeholder="Search containers..."
-				className="sm:max-w-sm"
+				placeholder="Filter..."
+				className="helm-filter-input"
 			/>
-			<div className="flex flex-wrap items-center gap-2 md:flex-nowrap">
+			<div className="helm-toolbar-controls">
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
-						<Button variant="outline" size="sm" className="h-9">
-							{hostFilter === "all" ? "All hosts" : hostFilter}
+						<Button variant="outline" size="sm" className="h-8">
+							Host: {hostFilter === "all" ? "All hosts" : hostFilter}
 							<ChevronDownIcon className="ml-2 size-4" />
 						</Button>
 					</DropdownMenuTrigger>
@@ -165,7 +165,7 @@ export function ContainersToolbar({
 
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
-						<Button variant="outline" size="sm" className="h-9">
+						<Button variant="outline" size="sm" className="h-8">
 							{stateFilter === "all" ? "All states" : toTitleCase(stateFilter)}
 							<ChevronDownIcon className="ml-2 size-4" />
 						</Button>
@@ -189,7 +189,7 @@ export function ContainersToolbar({
 
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
-						<Button variant="outline" size="sm" className="h-9">
+						<Button variant="outline" size="sm" className="h-8">
 							Sort: {sortLabels[sortBy]}
 							<ChevronDownIcon className="ml-2 size-4" />
 						</Button>
@@ -215,7 +215,7 @@ export function ContainersToolbar({
 
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
-						<Button variant="outline" size="sm" className="h-9">
+						<Button variant="outline" size="sm" className="h-8">
 							{sortDirection === "desc" ? "Desc" : "Asc"}
 							<ChevronDownIcon className="ml-2 size-4" />
 						</Button>
@@ -239,8 +239,8 @@ export function ContainersToolbar({
 
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
-						<Button variant="outline" size="sm" className="h-9">
-							{groupBy === "compose" ? "By project" : "No grouping"}
+						<Button variant="outline" size="sm" className="h-8">
+							Group: {groupBy === "compose" ? "Project" : "None"}
 							<ChevronDownIcon className="ml-2 size-4" />
 						</Button>
 					</DropdownMenuTrigger>
@@ -259,11 +259,11 @@ export function ContainersToolbar({
 					</DropdownMenuContent>
 				</DropdownMenu>
 
-				<div className="flex items-center rounded-md border bg-background p-1">
+				<div className="helm-segmented">
 					<Button
 						variant={statsInterval === "1h" ? "secondary" : "ghost"}
 						size="sm"
-						className="h-7 px-2 text-xs"
+						className="h-7 px-3 text-xs"
 						onClick={() => onStatsIntervalChange("1h")}
 					>
 						1h
@@ -271,7 +271,7 @@ export function ContainersToolbar({
 					<Button
 						variant={statsInterval === "12h" ? "secondary" : "ghost"}
 						size="sm"
-						className="h-7 px-2 text-xs"
+						className="h-7 px-3 text-xs"
 						onClick={() => onStatsIntervalChange("12h")}
 					>
 						12h
@@ -283,7 +283,7 @@ export function ContainersToolbar({
 						<Button
 							variant={dateRange?.from ? "default" : "outline"}
 							size="sm"
-							className="h-9 justify-start text-left font-normal"
+							className="h-8 justify-start text-left font-normal"
 						>
 							<CalendarIcon className="mr-2 size-4" />
 							{renderDateRange()}
@@ -313,7 +313,7 @@ export function ContainersToolbar({
 					variant="ghost"
 					size="sm"
 					onClick={onRefresh}
-					className="h-9 shrink-0"
+					className="h-8 shrink-0"
 					aria-label="Refresh"
 				>
 					<RefreshCcwIcon
@@ -323,7 +323,7 @@ export function ContainersToolbar({
 
 				<Tooltip>
 					<TooltipTrigger asChild>
-						<Button variant="ghost" size="sm" className="h-9 shrink-0" asChild>
+						<Button variant="ghost" size="sm" className="h-8 shrink-0" asChild>
 							<Link to="/settings" aria-label="Settings">
 								<SettingsIcon className="size-4" />
 							</Link>
@@ -339,7 +339,7 @@ export function ContainersToolbar({
 								variant="ghost"
 								size="sm"
 								onClick={handleLogout}
-								className="h-9 shrink-0"
+								className="h-8 shrink-0"
 								aria-label="Logout"
 							>
 								<LogOutIcon className="size-4" />
