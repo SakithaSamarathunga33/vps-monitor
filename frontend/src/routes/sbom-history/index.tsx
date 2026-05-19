@@ -12,7 +12,7 @@ export const Route = createFileRoute("/sbom-history/")({
 
 function SBOMHistoryRoute() {
   return (
-    <main className="container mx-auto px-4 py-8">
+    <main className="container">
       <SBOMHistoryPage />
     </main>
   );
