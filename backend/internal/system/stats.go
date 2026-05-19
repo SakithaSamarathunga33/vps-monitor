@@ -33,13 +33,18 @@ type HostInfo struct {
 }
 
 type Usage struct {
-	CPUPercent    float64 `json:"cpuPercent"`
-	MemoryPercent float64 `json:"memoryPercent"`
-	MemoryTotal   uint64  `json:"memoryTotal"`
-	MemoryUsed    uint64  `json:"memoryUsed"`
-	DiskPercent   float64 `json:"diskPercent"`
-	DiskTotal     uint64  `json:"diskTotal"`
-	DiskUsed      uint64  `json:"diskUsed"`
+	CPUPercent    float64   `json:"cpuPercent"`
+	CPUPerCore    []float64 `json:"cpuPerCore,omitempty"`
+	MemoryPercent float64   `json:"memoryPercent"`
+	MemoryTotal   uint64    `json:"memoryTotal"`
+	MemoryUsed    uint64    `json:"memoryUsed"`
+	MemoryCached  uint64    `json:"memoryCached"`
+	MemoryBuffers uint64    `json:"memoryBuffers"`
+	SwapTotal     uint64    `json:"swapTotal"`
+	SwapUsed      uint64    `json:"swapUsed"`
+	DiskPercent   float64   `json:"diskPercent"`
+	DiskTotal     uint64    `json:"diskTotal"`
+	DiskUsed      uint64    `json:"diskUsed"`
 }
 
 type LoadInfo struct {
@@ -80,10 +85,9 @@ func GetStats(ctx context.Context) (*SystemStats, error) {
 		return nil, err
 	}
 
-	// Get CPU Percent (over a small interval)
-	// Note: 0 interval returns immediate value since last call, which might be 0 on first call
-	// For a dashboard, we usually want the average over the last second, but that blocks.
-	// A better approach for an API is to return the value since last call or just immediate.
+	swapMem, _ := mem.SwapMemoryWithContext(ctx)
+
+	// Get CPU Percent (overall + per-core)
 	cpuPercents, err := cpu.PercentWithContext(ctx, 0, false)
 	if err != nil {
 		return nil, err
@@ -93,6 +97,8 @@ func GetStats(ctx context.Context) (*SystemStats, error) {
 	if len(cpuPercents) > 0 {
 		cpuPercent = cpuPercents[0]
 	}
+
+	perCorePercents, _ := cpu.PercentWithContext(ctx, 0, true)
 
 	cachedCPUMutex.Lock()
 	needsFetch := cachedCPULogical == 0
@@ -161,9 +167,14 @@ func GetStats(ctx context.Context) (*SystemStats, error) {
 		},
 		Usage: Usage{
 			CPUPercent:    cpuPercent,
+			CPUPerCore:    perCorePercents,
 			MemoryPercent: vMem.UsedPercent,
 			MemoryTotal:   vMem.Total,
 			MemoryUsed:    vMem.Used,
+			MemoryCached:  vMem.Cached,
+			MemoryBuffers: vMem.Buffers,
+			SwapTotal:     func() uint64 { if swapMem != nil { return swapMem.Total }; return 0 }(),
+			SwapUsed:      func() uint64 { if swapMem != nil { return swapMem.Used }; return 0 }(),
 			DiskPercent:   diskPercent,
 			DiskTotal:     diskTotal,
 			DiskUsed:      diskUsed,

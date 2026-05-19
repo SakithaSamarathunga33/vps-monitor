@@ -14,9 +14,14 @@ export interface SystemStats {
   };
   usage: {
     cpuPercent: number;
+    cpuPerCore?: number[];
     memoryPercent: number;
     memoryTotal: number;
     memoryUsed: number;
+    memoryCached: number;
+    memoryBuffers: number;
+    swapTotal: number;
+    swapUsed: number;
     diskPercent: number;
     diskTotal: number;
     diskUsed: number;

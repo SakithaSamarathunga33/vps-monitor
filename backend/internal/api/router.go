@@ -133,6 +133,7 @@ func (ar *APIRouter) Routes() *chi.Mux {
 	ar.router.Route("/api/v1", func(r chi.Router) {
 		// System stats - publicly available
 		r.Get("/system/stats", ar.GetSystemStats)
+		r.Get("/system/stats/history", ar.GetSystemStatsHistory)
 		r.Get("/system/processes", ar.GetProcesses)
 
 		// Auth login - always registered, dynamic behavior
@@ -298,6 +299,7 @@ func (ar *APIRouter) registerProcessRoutes(r chi.Router) {
 }
 
 func (ar *APIRouter) registerSystemRoutes(r chi.Router) {
+	r.Get("/system/docker-disk-usage", ar.GetDockerDiskUsage)
 	r.Group(func(mutating chi.Router) {
 		mutating.Use(middleware.ReadOnly(func() bool {
 			return ar.registry.Config().ReadOnly

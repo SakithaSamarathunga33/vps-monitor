@@ -140,6 +140,13 @@ func (ar *APIRouter) GetSystemStats(w http.ResponseWriter, r *http.Request) {
 	WriteJsonResponse(w, http.StatusOK, stats)
 }
 
+func (ar *APIRouter) GetSystemStatsHistory(w http.ResponseWriter, r *http.Request) {
+	points := system.GetHostStatsHistory()
+	WriteJsonResponse(w, http.StatusOK, map[string]any{
+		"points": points,
+	})
+}
+
 func (ar *APIRouter) GetProcesses(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	resp, err := system.GetProcesses(ctx, ar.killOnSight)

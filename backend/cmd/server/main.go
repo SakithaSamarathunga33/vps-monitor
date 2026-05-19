@@ -37,6 +37,7 @@ func main() {
 	}
 
 	system.Init()
+	system.StartHostStatsCollector()
 
 	const containerStatsRetention = 30 * 24 * time.Hour
 
