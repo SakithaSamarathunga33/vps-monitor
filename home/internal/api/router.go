@@ -150,6 +150,7 @@ func (ar *APIRouter) Routes() *chi.Mux {
 			ar.registerContainerRoutes(protected)
 			ar.registerImageRoutes(protected)
 			ar.registerNetworkRoutes(protected)
+			ar.registerDatabaseRoutes(protected)
 			ar.registerAlertRoutes(protected)
 			ar.registerBotRoutes(protected)
 			ar.registerScanRoutes(protected)
@@ -223,6 +224,16 @@ func (ar *APIRouter) registerImageRoutes(r chi.Router) {
 func (ar *APIRouter) registerNetworkRoutes(r chi.Router) {
 	r.Get("/networks", ar.GetNetworks)
 	r.Get("/networks/{id}", ar.GetNetwork)
+}
+
+func (ar *APIRouter) registerDatabaseRoutes(r chi.Router) {
+	r.Get("/databases", ar.GetDatabaseInstances)
+	r.Route("/databases/{id}", func(r chi.Router) {
+		r.Get("/names", ar.GetDatabaseNames)
+		r.Get("/tables", ar.GetDatabaseTables)
+		r.Get("/columns", ar.GetDatabaseColumns)
+		r.Get("/rows", ar.GetDatabaseRows)
+	})
 }
 
 func (ar *APIRouter) registerAlertRoutes(r chi.Router) {

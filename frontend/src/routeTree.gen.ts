@@ -18,6 +18,7 @@ import { Route as SbomHistoryIndexRouteImport } from './routes/sbom-history/inde
 import { Route as ProcessesIndexRouteImport } from './routes/processes/index'
 import { Route as NetworksIndexRouteImport } from './routes/networks/index'
 import { Route as ImagesIndexRouteImport } from './routes/images/index'
+import { Route as DatabasesIndexRouteImport } from './routes/databases/index'
 import { Route as AlertsIndexRouteImport } from './routes/alerts/index'
 import { Route as DemoTanstackQueryRouteImport } from './routes/demo/tanstack-query'
 import { Route as ContainersContainerIdLogsRouteImport } from './routes/containers/$containerId/logs'
@@ -67,6 +68,11 @@ const ImagesIndexRoute = ImagesIndexRouteImport.update({
   path: '/images/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DatabasesIndexRoute = DatabasesIndexRouteImport.update({
+  id: '/databases/',
+  path: '/databases/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AlertsIndexRoute = AlertsIndexRouteImport.update({
   id: '/alerts/',
   path: '/alerts/',
@@ -90,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/alerts/': typeof AlertsIndexRoute
+  '/databases/': typeof DatabasesIndexRoute
   '/images/': typeof ImagesIndexRoute
   '/networks/': typeof NetworksIndexRoute
   '/processes/': typeof ProcessesIndexRoute
@@ -104,6 +111,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/alerts': typeof AlertsIndexRoute
+  '/databases': typeof DatabasesIndexRoute
   '/images': typeof ImagesIndexRoute
   '/networks': typeof NetworksIndexRoute
   '/processes': typeof ProcessesIndexRoute
@@ -119,6 +127,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/alerts/': typeof AlertsIndexRoute
+  '/databases/': typeof DatabasesIndexRoute
   '/images/': typeof ImagesIndexRoute
   '/networks/': typeof NetworksIndexRoute
   '/processes/': typeof ProcessesIndexRoute
@@ -135,6 +144,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/demo/tanstack-query'
     | '/alerts/'
+    | '/databases/'
     | '/images/'
     | '/networks/'
     | '/processes/'
@@ -149,6 +159,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/demo/tanstack-query'
     | '/alerts'
+    | '/databases'
     | '/images'
     | '/networks'
     | '/processes'
@@ -163,6 +174,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/demo/tanstack-query'
     | '/alerts/'
+    | '/databases/'
     | '/images/'
     | '/networks/'
     | '/processes/'
@@ -178,6 +190,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   DemoTanstackQueryRoute: typeof DemoTanstackQueryRoute
   AlertsIndexRoute: typeof AlertsIndexRoute
+  DatabasesIndexRoute: typeof DatabasesIndexRoute
   ImagesIndexRoute: typeof ImagesIndexRoute
   NetworksIndexRoute: typeof NetworksIndexRoute
   ProcessesIndexRoute: typeof ProcessesIndexRoute
@@ -252,6 +265,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ImagesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/databases/': {
+      id: '/databases/'
+      path: '/databases'
+      fullPath: '/databases/'
+      preLoaderRoute: typeof DatabasesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/alerts/': {
       id: '/alerts/'
       path: '/alerts'
@@ -282,6 +302,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   DemoTanstackQueryRoute: DemoTanstackQueryRoute,
   AlertsIndexRoute: AlertsIndexRoute,
+  DatabasesIndexRoute: DatabasesIndexRoute,
   ImagesIndexRoute: ImagesIndexRoute,
   NetworksIndexRoute: NetworksIndexRoute,
   ProcessesIndexRoute: ProcessesIndexRoute,
