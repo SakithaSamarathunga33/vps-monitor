@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -21,6 +22,20 @@ import (
 )
 
 func main() {
+	if len(os.Args) >= 2 && os.Args[1] == "hash-password" {
+		if len(os.Args) != 3 {
+			fmt.Fprintln(os.Stderr, "usage: vps-monitor hash-password <password>")
+			os.Exit(2)
+		}
+		hash, err := auth.HashPassword(os.Args[2])
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to hash password: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Println(hash)
+		return
+	}
+
 	system.Init()
 
 	const containerStatsRetention = 30 * 24 * time.Hour

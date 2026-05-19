@@ -1,0 +1,24 @@
+services:
+  vps-monitor:
+    image: ${VPS_MONITOR_IMAGE:-ghcr.io/hhftechnology/vps-monitor:latest}
+    container_name: vps-monitor
+    restart: unless-stopped
+    pid: "host"
+    privileged: true
+    cap_add:
+      - KILL
+    ports:
+      - "${VPS_MONITOR_PORT:-6789}:6789"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /proc:/host/proc:ro
+      - vps-monitor-data:/data
+    environment:
+      - CONFIG_PATH=/data/config.json
+      - DATA_DIR=/data
+      - SCANNER_DB_PATH=/data/scanner.db
+      - HOSTNAME_OVERRIDE=${HOSTNAME_OVERRIDE:-VPS Monitor}
+      - DOCKER_HOSTS=${DOCKER_HOSTS:-local=unix:///var/run/docker.sock}
+
+volumes:
+  vps-monitor-data:
