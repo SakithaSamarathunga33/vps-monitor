@@ -165,7 +165,10 @@ export function AppShell({ children }: AppShellProps) {
 											key={item.to}
 											variant="ghost"
 											asChild
-											className={cn("helm-nav-item", active && "is-active")}
+											className={cn(
+												"helm-nav-item justify-start!",
+												active && "is-active",
+											)}
 										>
 											<Link to={item.to}>
 												<Icon className="size-4" />

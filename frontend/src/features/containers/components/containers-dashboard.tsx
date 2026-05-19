@@ -1,8 +1,8 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { FilterIcon, PlusIcon, RefreshCcwIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { DateRange } from "react-day-picker";
 import { toast } from "sonner";
-import { FilterIcon, PlusIcon, RefreshCcwIcon } from "lucide-react";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { useSystemStatsHistory } from "../../stats/hooks/use-system-stats-history";
 import {
 	removeContainer,
 	restartContainer,
@@ -24,6 +25,7 @@ import {
 import type { GetContainersResponse } from "../api/get-containers";
 import { useContainersDashboardUrlState } from "../hooks/use-containers-dashboard-url-state";
 import { useContainersQuery } from "../hooks/use-containers-query";
+import { usePruneBuilderCache } from "../hooks/use-prune-builder-cache";
 import { useSystemStats } from "../hooks/use-system-stats";
 import type { ContainerInfo } from "../types";
 import { ContainerDetailsSheet } from "./container-details-sheet";
@@ -46,19 +48,21 @@ import { ContainersStateSummary } from "./containers-state-summary";
 import { ContainersSummaryCards } from "./containers-summary-cards";
 import { ContainersTable } from "./containers-table";
 import { ContainersToolbar } from "./containers-toolbar";
-import { DiskSpaceMonitor } from "./disk-space-monitor";
 
 export function ContainersDashboard() {
 	const queryClient = useQueryClient();
 	const { data, error, isError, isFetching, isLoading, refetch } =
 		useContainersQuery();
 	const { data: systemStats } = useSystemStats();
+	const { data: statsHistory = [] } = useSystemStatsHistory();
+	const pruneMutation = usePruneBuilderCache();
 
 	const containers = data?.containers ?? [];
 	const runningCount = useMemo(
 		() =>
-			containers.filter((container) => container.state.toLowerCase() === "running")
-				.length,
+			containers.filter(
+				(container) => container.state.toLowerCase() === "running",
+			).length,
 		[containers],
 	);
 	const stoppedCount = useMemo(
@@ -92,12 +96,85 @@ export function ContainersDashboard() {
 			disk: Math.round(systemStats?.usage.diskPercent ?? 0),
 			memoryUsed: systemStats?.usage.memoryUsed ?? 0,
 			memoryTotal: systemStats?.usage.memoryTotal ?? 0,
+			diskUsed: systemStats?.usage.diskUsed ?? 0,
+			diskTotal: systemStats?.usage.diskTotal ?? 0,
 			cpuLogical: systemStats?.hostInfo.cpuLogical ?? 0,
 			load: systemStats?.load,
 			network: systemStats?.network,
 		}),
 		[systemStats],
 	);
+
+	const handleClearCache = () => {
+		pruneMutation.mutate(undefined, {
+			onSuccess: (result) => {
+				const formatBytes = (b: number) => {
+					if (b >= 1024 ** 3) return `${(b / 1024 ** 3).toFixed(1)} GB`;
+					if (b >= 1024 ** 2) return `${(b / 1024 ** 2).toFixed(0)} MB`;
+					return `${(b / 1024).toFixed(0)} KB`;
+				};
+				toast.success(
+					`Docker builder cache cleared. Reclaimed ${formatBytes(result.space_reclaimed)}.`,
+				);
+			},
+			onError: (error) => {
+				toast.error(
+					error instanceof Error
+						? error.message
+						: "Failed to clear Docker builder cache.",
+				);
+			},
+		});
+	};
+
+	const sparkCpu = useMemo(
+		() => statsHistory.map((p) => p.cpu),
+		[statsHistory],
+	);
+	const sparkMem = useMemo(
+		() => statsHistory.map((p) => p.mem),
+		[statsHistory],
+	);
+	const sparkNet = useMemo(
+		() => statsHistory.map((p) => p.rx + p.tx),
+		[statsHistory],
+	);
+
+	const deltaCpu = useMemo(() => {
+		if (statsHistory.length < 12) return undefined;
+		const delta =
+			statsHistory[statsHistory.length - 1].cpu -
+			statsHistory[statsHistory.length - 12].cpu;
+		const sign = delta >= 0 ? "+" : "";
+		return `${sign}${delta.toFixed(1)}%`;
+	}, [statsHistory]);
+
+	const deltaMem = useMemo(() => {
+		if (statsHistory.length < 12) return undefined;
+		const delta =
+			statsHistory[statsHistory.length - 1].mem -
+			statsHistory[statsHistory.length - 12].mem;
+		const sign = delta >= 0 ? "+" : "";
+		return `${sign}${delta.toFixed(1)}%`;
+	}, [statsHistory]);
+
+	const netRxRate = useMemo(() => {
+		if (statsHistory.length < 2) return 0;
+		const last = statsHistory[statsHistory.length - 1];
+		const prev = statsHistory[statsHistory.length - 2];
+		const dt = last.ts - prev.ts;
+		if (dt <= 0) return 0;
+		return Math.max(0, (last.rx - prev.rx) / dt);
+	}, [statsHistory]);
+
+	const netTxRate = useMemo(() => {
+		if (statsHistory.length < 2) return 0;
+		const last = statsHistory[statsHistory.length - 1];
+		const prev = statsHistory[statsHistory.length - 2];
+		const dt = last.ts - prev.ts;
+		if (dt <= 0) return 0;
+		return Math.max(0, (last.tx - prev.tx) / dt);
+	}, [statsHistory]);
 
 	const {
 		searchTerm,
@@ -601,13 +678,16 @@ export function ContainersDashboard() {
 				systemUsage={systemUsage}
 				runningCount={runningCount}
 				stoppedCount={stoppedCount}
-			/>
-
-			<DiskSpaceMonitor
-				usedBytes={systemStats?.usage.diskUsed ?? 0}
-				totalBytes={systemStats?.usage.diskTotal ?? 0}
-				percent={systemStats?.usage.diskPercent ?? 0}
+				sparkCpu={sparkCpu}
+				sparkMem={sparkMem}
+				sparkNet={sparkNet}
+				deltaCpu={deltaCpu}
+				deltaMem={deltaMem}
+				netRxRate={netRxRate}
+				netTxRate={netTxRate}
 				isReadOnly={isReadOnly}
+				isClearingCache={pruneMutation.isPending}
+				onClearCache={handleClearCache}
 			/>
 
 			{hostErrors.length > 0 && (
@@ -630,7 +710,10 @@ export function ContainersDashboard() {
 			)}
 
 			<section className="space-y-4">
-				<ContainersStateSummary stateCounts={stateCounts} total={containers.length} />
+				<ContainersStateSummary
+					stateCounts={stateCounts}
+					total={containers.length}
+				/>
 
 				<ContainersToolbar
 					searchTerm={searchTerm}

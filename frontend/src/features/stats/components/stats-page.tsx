@@ -208,6 +208,9 @@ export function StatsPage() {
           percent={usage?.cpuPercent ?? 0}
           color="indigo"
           subtitle={`${host?.cpuLogical ?? "—"} logical cores`}
+          sparkData={history.length >= 2 ? history.map((p) => p.cpu) : undefined}
+          delta={history.length >= 12 ? (() => { const d = history[history.length - 1].cpu - history[history.length - 12].cpu; return `${d >= 0 ? "+" : ""}${d.toFixed(1)}%`; })() : undefined}
+          deltaTone={history.length >= 12 && history[history.length - 1].cpu >= history[history.length - 12].cpu ? "up" : "down"}
         />
         <MetricCard
           label="Memory"
@@ -215,6 +218,9 @@ export function StatsPage() {
           percent={usage?.memoryPercent ?? 0}
           color="amber"
           subtitle={`${formatBytes(usage?.memoryUsed ?? 0)} / ${formatBytes(usage?.memoryTotal ?? 0)}`}
+          sparkData={history.length >= 2 ? history.map((p) => p.mem) : undefined}
+          delta={history.length >= 12 ? (() => { const d = history[history.length - 1].mem - history[history.length - 12].mem; return `${d >= 0 ? "+" : ""}${d.toFixed(1)}%`; })() : undefined}
+          deltaTone={history.length >= 12 && history[history.length - 1].mem >= history[history.length - 12].mem ? "up" : "down"}
         />
         <MetricCard
           label="Disk"
@@ -222,13 +228,15 @@ export function StatsPage() {
           percent={usage?.diskPercent ?? 0}
           color="green"
           subtitle={`${formatBytes(diskFreeBytes)} free`}
+          sparkData={history.length >= 2 ? history.map((p) => p.disk) : undefined}
         />
         <MetricCard
           label="Network ↓"
           value={formatNetRate(netRxRate)}
           percent={Math.min(100, (netRxRate / 1024 / 1024) * 100)}
-          color="indigo"
+          color="cyan"
           subtitle={`↑ ${formatNetRate(netTxRate)}`}
+          sparkData={history.length >= 2 ? history.map((p) => p.rx + p.tx) : undefined}
         />
       </div>
 

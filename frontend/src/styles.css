@@ -514,6 +514,24 @@
     font-weight: 500;
   }
 
+  .helm-metric-delta {
+    margin-left: auto;
+    flex-shrink: 0;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    align-self: center;
+  }
+
+  .helm-metric-delta.is-up {
+    color: var(--helm-ok);
+  }
+
+  .helm-metric-delta.is-down {
+    color: #ef4444;
+  }
+
   .helm-chip-row {
     margin-top: auto;
     display: flex;
@@ -580,6 +598,47 @@
   .helm-system-strip .helm-strip-value span {
     color: var(--muted-foreground);
     font-size: 15px;
+  }
+
+  /* Merged disk+network+load wide card */
+  .helm-system-wide {
+    display: grid !important;
+    grid-template-columns: minmax(180px, 1fr) minmax(220px, 1.4fr) minmax(220px, 1.4fr);
+    gap: 0;
+    padding: 0 !important;
+    height: auto !important;
+    flex-direction: unset !important;
+  }
+
+  .helm-system-col {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px 20px;
+    border-right: 1px solid var(--border);
+  }
+
+  .helm-system-col:last-child {
+    border-right: none;
+  }
+
+  .helm-strip-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .helm-strip-stat .helm-strip-value {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    color: var(--foreground);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 15px;
+    font-weight: 700;
+    flex-wrap: wrap;
   }
 
   .helm-state-tabs {
