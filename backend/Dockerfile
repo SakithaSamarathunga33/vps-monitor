@@ -21,12 +21,12 @@ FROM --platform=$BUILDPLATFORM golang:1.25 AS backend-builder
 WORKDIR /app
 
 # Copy Go module files
-COPY home/go.mod home/go.sum ./
+COPY backend/go.mod backend/go.sum ./
 ENV GOTOOLCHAIN=auto
 RUN go mod download
 
 # Copy backend source
-COPY home/ .
+COPY backend/ .
 
 # Copy built frontend into the static embed directory
 COPY --from=frontend-builder /frontend/dist ./internal/static/dist

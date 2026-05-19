@@ -11,10 +11,10 @@ type deviceRegistrationRequest struct {
 	Platform string `json:"platform"`
 }
 
-// RegisterDevice accepts mobile push device registrations.
+// RegisterDevice accepts push device registrations.
 //
 // Push delivery is not implemented on the server yet, but we accept and validate
-// registrations so mobile clients can complete their setup flow without failing.
+// registrations so clients can complete their setup flow without failing.
 func (ar *APIRouter) RegisterDevice(w http.ResponseWriter, r *http.Request) {
 	var req deviceRegistrationRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

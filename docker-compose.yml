@@ -2,7 +2,7 @@ services:
   vps-monitor:
     build:
       context: .
-      dockerfile: ./home/Dockerfile
+      dockerfile: ./backend/Dockerfile
     container_name: vps-monitor
     restart: unless-stopped
     pid: "host"
