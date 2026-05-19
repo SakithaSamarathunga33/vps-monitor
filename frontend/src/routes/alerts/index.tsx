@@ -12,7 +12,7 @@ export const Route = createFileRoute("/alerts/")({
 
 function AlertsPage() {
   return (
-    <main className="container">
+    <main className="w-full max-w-[1600px] mx-auto px-6 pt-5 pb-20">
       <AlertsList />
     </main>
   );

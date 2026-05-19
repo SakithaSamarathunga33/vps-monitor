@@ -433,15 +433,6 @@
     padding: 0;
   }
 
-  .helm-content .container {
-    width: 100%;
-    max-width: 1600px;
-    padding-left: 24px;
-    padding-right: 24px;
-    padding-top: 20px;
-    padding-bottom: 80px;
-  }
-
   .helm-page-head {
     display: flex;
     min-width: 0;

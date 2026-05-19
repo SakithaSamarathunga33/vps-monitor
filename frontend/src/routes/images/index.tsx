@@ -12,7 +12,7 @@ export const Route = createFileRoute("/images/")({
 
 function ImagesPage() {
 	return (
-		<main className="container">
+		<main className="w-full max-w-[1600px] mx-auto px-6 pt-5 pb-20">
 			<ImagesTable />
 		</main>
 	);

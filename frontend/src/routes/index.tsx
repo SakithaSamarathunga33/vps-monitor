@@ -35,7 +35,7 @@ export const Route = createFileRoute("/")({
 
 function Index() {
 	return (
-		<main className="container mx-auto px-4 py-8">
+		<main className="w-full max-w-[1600px] mx-auto px-6 pt-5 pb-20">
 			<ContainersDashboard />
 		</main>
 	);
