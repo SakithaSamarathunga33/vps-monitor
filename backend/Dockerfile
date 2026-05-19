@@ -1,19 +1,19 @@
 # Stage 1: Build the frontend
-FROM oven/bun:latest AS frontend-builder
+FROM node:22-bookworm-slim AS frontend-builder
 
 WORKDIR /frontend
 
 # Copy frontend package files
-COPY frontend/package.json frontend/bun.lock ./
+COPY frontend/package.json frontend/package-lock.json ./
 
 # Install dependencies
-RUN bun install --frozen-lockfile
+RUN npm ci
 
 # Copy frontend source
 COPY frontend/ ./
 
 # Build frontend (outputs to ./dist)
-RUN bun run build
+RUN npm run build
 
 # Stage 2: Build the backend with embedded frontend
 FROM --platform=$BUILDPLATFORM golang:1.25 AS backend-builder

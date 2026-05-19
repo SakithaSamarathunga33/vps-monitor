@@ -10,8 +10,8 @@ dist/
 build/
 
 # Backend (Go)
-home/tmp/
-home/bin/
+backend/tmp/
+backend/bin/
 *.exe
 *.exe~
 *.dll
@@ -19,7 +19,7 @@ home/bin/
 *.dylib
 *.test
 *.out
-home/build-errors.log
+backend/build-errors.log
 
 # Frontend (Bun)
 node_modules/
@@ -31,6 +31,7 @@ yarn-error.log*
 pnpm-debug.log*
 .pnpm-store/
 package-lock.json
+!frontend/package-lock.json
 yarn.lock
 pnpm-lock.yaml
 

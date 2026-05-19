@@ -6,8 +6,7 @@ import {
 import { lazy, Suspense } from "react";
 import { NuqsAdapter } from "nuqs/adapters/tanstack-router";
 
-import { Footer } from "@/components/footer";
-import { Header } from "@/components/header";
+import { AppShell } from "@/components/app-shell";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/contexts/auth-context";
 import { ThemeProvider } from "@/contexts/theme-context";
@@ -32,13 +31,15 @@ function RootLayout() {
     <ThemeProvider>
       <AuthProvider>
         <NuqsAdapter>
-          <div className="flex min-h-screen flex-col">
-            {!isLoginPage && <Header />}
-            <div className="flex-1">
+          {isLoginPage ? (
+            <div className="min-h-screen">
               <Outlet />
             </div>
-            {!isLoginPage && <Footer />}
-          </div>
+          ) : (
+            <AppShell>
+              <Outlet />
+            </AppShell>
+          )}
         </NuqsAdapter>
         <Toaster />
         {import.meta.env.DEV && (

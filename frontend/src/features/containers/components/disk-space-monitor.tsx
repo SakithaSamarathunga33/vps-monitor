@@ -76,8 +76,8 @@ export function DiskSpaceMonitor({
   return (
     <Card>
       <CardHeader className="pb-3">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2">
+        <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
+          <div className="flex min-w-0 items-center gap-2">
             <HardDriveIcon className="size-5 text-primary" />
             <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
               Disk Space
@@ -91,7 +91,7 @@ export function DiskSpaceMonitor({
                 variant="outline"
                 size="sm"
                 disabled={isReadOnly || pruneMutation.isPending}
-                className="gap-2"
+                className="w-full gap-2 md:w-auto"
               >
                 {pruneMutation.isPending ? (
                   <Spinner className="size-4" />
@@ -126,14 +126,14 @@ export function DiskSpaceMonitor({
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="flex items-end justify-between gap-4">
-          <div>
+        <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+          <div className="min-w-0">
             <p className="text-2xl font-bold">{Math.round(percent)}%</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="min-w-0 truncate text-xs text-muted-foreground">
               {formatBytes(usedBytes)} used of {formatBytes(totalBytes)}
             </p>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="whitespace-nowrap text-sm text-muted-foreground">
             {formatBytes(freeBytes)} free
           </p>
         </div>

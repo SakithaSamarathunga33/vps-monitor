@@ -24,9 +24,9 @@ interface ContainersSummaryCardsProps {
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
-  const gb = bytes / (1024 ** 3);
+  const gb = bytes / 1024 ** 3;
   if (gb >= 1) return `${gb.toFixed(gb >= 10 ? 0 : 1)} GB`;
-  const mb = bytes / (1024 ** 2);
+  const mb = bytes / 1024 ** 2;
   return `${Math.round(mb)} MB`;
 }
 
@@ -36,34 +36,48 @@ export function ContainersSummaryCards({
   hostInfo,
   systemUsage,
 }: ContainersSummaryCardsProps) {
-  const memorySubtitle = systemUsage.memoryTotal > 0
-    ? `${formatBytes(systemUsage.memoryUsed)} / ${formatBytes(systemUsage.memoryTotal)}`
-    : undefined;
+  const memorySubtitle =
+    systemUsage.memoryTotal > 0
+      ? `${formatBytes(systemUsage.memoryUsed)} / ${formatBytes(systemUsage.memoryTotal)}`
+      : undefined;
 
   return (
     <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-      <Card className="border-t-2 border-t-primary py-4">
-        <CardContent className="px-6 py-0">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+      <Card className="min-h-[132px] border-t-2 border-t-primary py-4">
+        <CardContent className="flex h-full flex-col px-6 py-0">
+          <p className="truncate text-xs font-semibold uppercase text-muted-foreground">
             Host
           </p>
-          <p className="mt-1 text-2xl font-bold truncate" title={hostInfo.hostname}>
+          <p
+            className="mt-1 min-w-0 truncate text-[clamp(1.1rem,1.8vw,1.45rem)] font-bold leading-tight"
+            title={hostInfo.hostname}
+          >
             {hostInfo.hostname}
           </p>
-          <p className="mt-1 text-xs text-muted-foreground truncate">
-            {hostInfo.os} · {hostInfo.kernel}
+          <p
+            className="mt-auto min-w-0 truncate pt-2 text-xs text-muted-foreground"
+            title={`${hostInfo.os} - ${hostInfo.kernel}`}
+          >
+            {hostInfo.os} - {hostInfo.kernel}
           </p>
         </CardContent>
       </Card>
 
-      <Card className="border-t-2 border-t-primary py-4">
-        <CardContent className="px-6 py-0">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+      <Card className="min-h-[132px] border-t-2 border-t-primary py-4">
+        <CardContent className="flex h-full flex-col px-6 py-0">
+          <p className="truncate text-xs font-semibold uppercase text-muted-foreground">
             Apps
           </p>
-          <p className="mt-1 text-2xl font-bold">{totalContainers}</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {totalPM2Apps > 0 ? `${totalPM2Apps} PM2` : "total"}
+          <div className="mt-1 flex min-w-0 items-baseline gap-2">
+            <span className="text-[clamp(1.35rem,2.2vw,1.75rem)] font-bold leading-tight">
+              {totalContainers}
+            </span>
+            <span className="truncate text-xs text-muted-foreground">
+              containers
+            </span>
+          </div>
+          <p className="mt-auto min-w-0 truncate pt-2 text-xs text-muted-foreground">
+            {totalPM2Apps > 0 ? `${totalPM2Apps} PM2 apps` : "Docker apps total"}
           </p>
         </CardContent>
       </Card>

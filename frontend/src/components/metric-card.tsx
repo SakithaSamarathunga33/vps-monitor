@@ -22,18 +22,25 @@ const colorMap: Record<MetricColor, { border: string; bar: string }> = {
 export function MetricCard({ label, value, percent, color, subtitle, className }: MetricCardProps) {
   const { border, bar } = colorMap[color];
   return (
-    <Card className={cn("border-t-2 py-4", border, className)}>
-      <CardContent className="px-6 py-0">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+    <Card className={cn("min-h-[132px] border-t-2 py-4", border, className)}>
+      <CardContent className="flex h-full flex-col px-6 py-0">
+        <p className="truncate text-xs font-semibold uppercase text-muted-foreground">
           {label}
         </p>
-        <p className="mt-1 text-2xl font-bold">{value}</p>
+        <p
+          className="mt-1 min-w-0 truncate text-[clamp(1.35rem,2.2vw,1.75rem)] font-bold leading-tight"
+          title={value}
+        >
+          {value}
+        </p>
         {subtitle && (
-          <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>
+          <p className="mt-1 min-w-0 truncate text-xs text-muted-foreground" title={subtitle}>
+            {subtitle}
+          </p>
         )}
         <Progress
           value={Math.min(percent, 100)}
-          className="mt-2 h-1.5"
+          className="mt-auto h-1.5"
           indicatorClassName={bar}
         />
       </CardContent>
